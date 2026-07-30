@@ -8,10 +8,10 @@
    system and the website read as one product.
 
    Role notes:
-   - Blue is the identity surface (headers, membership card), not a button.
-   - Yellow carries the primary action; it is the only inviting colour we have.
-   - Red means failure only. Never use it for a CTA — it collides with the
-     delete/alert meaning it already carries across the admin.
+   - Blue is the identity colour for headings and structure.
+   - Red carries the primary action on the auth screens (pill CTA). Errors use
+     a tinted card rather than red borders, so the two never read the same.
+   - Yellow is used for the school-detected chip and softer notices.
    --------------------------------------------------------------------------- */
 :root {
   --tt-blue:        #003087;
@@ -24,6 +24,7 @@
   --tt-yellow-text: #8B6510;
 
   --tt-red:         #C8102E;
+  --tt-red-bright:  #E03248;
   --tt-red-tint:    #FDECEE;
   --tt-red-text:    #8E0B20;
 
@@ -38,6 +39,7 @@
   --tt-text:        #111827;
   --tt-muted:       #6B7280;
   --tt-placeholder: #9CA3AF;
+  --tt-label:       #546E7A;
 
   /* The brand has no green, but "your child arrived safely" is the one place
      a conventional success colour earns its keep. Used only for check-in. */
@@ -48,6 +50,9 @@
 
   --tt-radius:      12px;
   --tt-radius-lg:   26px;
+
+  --tt-font-heading: var(--font-heading), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --tt-font-body:    var(--font-body),    -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 * {
@@ -59,7 +64,7 @@ html, body {
   margin: 0;
   padding: 0;
   background: var(--tt-bg);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--tt-font-body);
   font-size: 14px;
   color: var(--tt-text);
   -webkit-font-smoothing: antialiased;
@@ -74,39 +79,136 @@ main {
 /* The login screen owns the full viewport and has no bottom nav. */
 body:has(.tt-auth) main { padding-bottom: 0; }
 
-.tt-field {
-  width: 100%;
-  background: var(--tt-surface);
-  border: 1px solid var(--tt-border);
-  border-radius: var(--tt-radius);
-  padding: 13px 14px;
-  font-size: 13px;
-  font-family: inherit;
-  color: var(--tt-text);
-  outline: none;
+/* ---------------------------------------------------------------------------
+   Auth screens — soft gradient field, frosted card, underline inputs.
+   --------------------------------------------------------------------------- */
+
+.tt-auth {
+  position: relative;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow: hidden;
+  background: radial-gradient(circle at top left, #FFFFFF 0%, #EEF4FC 55%, #FDF3EF 100%);
 }
-.tt-field::placeholder { color: var(--tt-placeholder); }
-.tt-field:focus         { border-color: var(--tt-blue); }
-.tt-field[aria-invalid="true"] { border-color: var(--tt-red); }
+
+/* Large blurred colour fields drifting behind the card. Purely decorative —
+   pointer-events off and hidden from assistive tech. */
+.tt-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.22;
+  pointer-events: none;
+  z-index: 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tt-orb { animation: tt-drift 12s infinite alternate ease-in-out; }
+}
+@keyframes tt-drift {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(18px, -18px) scale(1.12); }
+}
+
+.tt-glass {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 420px;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 28px;
+  padding: 32px 28px;
+  box-shadow: 0 8px 32px rgba(0, 48, 135, 0.10);
+}
+
+.tt-title {
+  font-family: var(--tt-font-heading);
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 36px;
+  color: var(--tt-blue);
+  margin: 0;
+}
+
+.tt-subtitle {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--tt-muted);
+  margin: 8px 0 0;
+}
+
+.tt-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--tt-label);
+  opacity: 0.7;
+  margin: 12px 0 0;
+}
 
 .tt-label {
   display: block;
-  margin: 0 0 7px;
-  font-size: 10px;
-  letter-spacing: 1px;
-  color: var(--tt-muted);
+  margin: 0 0 4px;
+  padding: 0 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--tt-label);
 }
+
+/* Underline-only field: recessed into the surface rather than boxed. */
+.tt-field {
+  width: 100%;
+  height: 48px;
+  padding: 0 14px;
+  background: rgba(255, 255, 255, 0.45);
+  border: none;
+  border-bottom: 2px solid rgba(84, 110, 122, 0.18);
+  border-radius: 10px 10px 0 0;
+  font-size: 15px;
+  font-family: inherit;
+  color: var(--tt-text);
+  outline: none;
+  transition: border-color .2s, background .2s;
+}
+.tt-field::placeholder { color: rgba(84, 110, 122, 0.4); }
+.tt-field:focus {
+  border-bottom-color: var(--tt-blue);
+  background: rgba(255, 255, 255, 0.75);
+}
+.tt-field[aria-invalid="true"] { border-bottom-color: var(--tt-red); }
 
 .tt-btn-primary {
   width: 100%;
-  background: var(--tt-yellow);
-  color: var(--tt-text);
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: linear-gradient(135deg, var(--tt-red) 0%, var(--tt-red-bright) 100%);
+  color: #fff;
   border: none;
-  border-radius: var(--tt-radius);
-  padding: 14px;
-  font-size: 14px;
-  font-weight: 500;
-  font-family: inherit;
+  border-radius: 999px;
+  font-family: var(--tt-font-heading);
+  font-size: 16px;
+  font-weight: 600;
   cursor: pointer;
+  box-shadow: 0 10px 25px -5px rgba(200, 16, 46, 0.4);
+  transition: transform .15s, box-shadow .15s, opacity .15s;
 }
-.tt-btn-primary:disabled { opacity: .55; cursor: default; }
+.tt-btn-primary:hover:not(:disabled)  { transform: scale(1.02); }
+.tt-btn-primary:active:not(:disabled) { transform: scale(0.97); }
+.tt-btn-primary:disabled {
+  opacity: .45;
+  cursor: default;
+  box-shadow: none;
+}

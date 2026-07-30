@@ -7,9 +7,11 @@ export default function MembershipCard({ parent, children }) {
 
   useEffect(() => {
     if (qrRef.current && parent?.member_id) {
+      // qrcode draws to a canvas and needs literal hex — it cannot resolve
+      // CSS custom properties. Keep these in sync with --tt-blue / --tt-bg.
       QRCode.toCanvas(qrRef.current, parent.member_id, {
         width: 64, margin: 1,
-        color: { dark: 'var(--tt-blue)', light: 'var(--tt-bg)' },
+        color: { dark: '#003087', light: '#FFFDF0' },
       });
     }
   }, [parent?.member_id]);

@@ -12,7 +12,7 @@ export default function LoginPage() {
   const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
   const [reveal,   setReveal]   = useState(false);
-  const [school,   setSchool]   = useState(null);   // { label, has_password }
+  const [school,   setSchool]   = useState(null);   // { school_label, has_password, whatsapp }
   const [error,    setError]    = useState('');
   const [busy,     setBusy]     = useState(false);
 
@@ -41,12 +41,11 @@ export default function LoginPage() {
     setBusy(true);
 
     try {
-      const res  = await fetch('/api/auth/login', {
+      const res = await fetch('/api/auth/login', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ email: email.trim(), password }),
       });
-      const data = await res.json();
 
       if (!res.ok) {
         // Only 401 is genuinely the parent's fault. Blaming their password for
@@ -73,104 +72,118 @@ export default function LoginPage() {
   const blocked = school && school.has_password === false;
 
   return (
-    <div className="tt-auth" style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column',
-                                      background: 'var(--tt-blue)' }}>
-      <header style={{ padding: '38px 24px 30px' }}>
-        {/* Light tile so the mark keeps its brand red + amber against the
-            blue header, rather than recolouring the logo itself. */}
-        <div style={{
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          background: 'var(--tt-bg)', borderRadius: 14,
-          padding: '10px 12px', marginBottom: 20,
-        }}>
-          <TutorTimeMark size={38} />
-        </div>
-        <h1 style={{ margin: 0, fontFamily: 'Georgia, "Times New Roman", serif',
-                     fontSize: 23, fontWeight: 400, color: '#fff', lineHeight: 1.25 }}>
-          {blocked ? 'Almost there' : 'Welcome back'}
-        </h1>
-        <p style={{ margin: '7px 0 0', fontSize: 12, color: 'var(--tt-blue-soft)', lineHeight: 1.55 }}>
-          {blocked
-            ? 'One step left before you can sign in.'
-            : 'Sign in with the email you gave your school.'}
-        </p>
-      </header>
+    <div className="tt-auth">
+      {/* Decorative colour fields behind the card. */}
+      <span className="tt-orb" aria-hidden="true"
+            style={{ top: '-12%', right: '-18%', width: 340, height: 340, background: 'var(--tt-blue)' }} />
+      <span className="tt-orb" aria-hidden="true"
+            style={{ bottom: '-10%', left: '-20%', width: 380, height: 380,
+                     background: 'var(--tt-red)', animationDelay: '-3s' }} />
+      <span className="tt-orb" aria-hidden="true"
+            style={{ bottom: '12%', right: '-12%', width: 240, height: 240,
+                     background: 'var(--tt-yellow)', animationDelay: '-6s' }} />
 
-      <div style={{ flex: 1, background: 'var(--tt-bg)',
-                    borderRadius: 'var(--tt-radius-lg) var(--tt-radius-lg) 0 0',
-                    padding: '26px 24px calc(28px + env(safe-area-inset-bottom))' }}>
+      {/* Logo on a white tile — the mark keeps its own red + amber. */}
+      <div style={{
+        position: 'relative', zIndex: 1,
+        width: 76, height: 76, marginBottom: 26,
+        background: 'rgba(255,255,255,0.92)',
+        border: '1px solid rgba(255,255,255,0.7)',
+        borderRadius: 20,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        boxShadow: '0 4px 16px rgba(0,48,135,0.08)',
+      }}>
+        <TutorTimeMark size={42} />
+      </div>
+
+      <div className="tt-glass">
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <h1 className="tt-title">{blocked ? 'Almost there' : 'Welcome back'}</h1>
+          <p className="tt-subtitle">
+            {blocked ? 'One step left before you can sign in.' : 'Ready for some learning fun?'}
+          </p>
+          {!blocked && <p className="tt-eyebrow">Sign in with your school email</p>}
+        </div>
+
         {blocked ? (
           <BlockedNotice school={school} onReset={() => { setSchool(null); setEmail(''); }} />
         ) : (
           <form onSubmit={submit} noValidate>
             {error && (
-              <div role="alert" style={{ background: 'var(--tt-red-tint)',
-                                         borderLeft: '3px solid var(--tt-red)',
-                                         padding: '11px 13px', marginBottom: 18 }}>
-                <p style={{ margin: 0, fontSize: 12, color: 'var(--tt-red-text)', lineHeight: 1.55 }}>
+              <div role="alert" style={{
+                background: 'var(--tt-red-tint)',
+                border: '1px solid rgba(200,16,46,0.18)',
+                borderRadius: 14, padding: '12px 14px', marginBottom: 22,
+              }}>
+                <p style={{ margin: 0, fontSize: 13, color: 'var(--tt-red-text)', lineHeight: 1.5 }}>
                   {error}
                 </p>
               </div>
             )}
 
-            <label className="tt-label" htmlFor="email">EMAIL</label>
-            <input
-              id="email" type="email" inputMode="email" autoComplete="email"
-              autoCapitalize="none" spellCheck="false"
-              className="tt-field" placeholder="name@example.com"
-              value={email}
-              aria-invalid={error ? 'true' : undefined}
-              onChange={(e) => { setEmail(e.target.value); setSchool(null); }}
-              onBlur={detectSchool}
-            />
-
-            {school && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8,
-                            background: 'var(--tt-yellow-tint)', borderRadius: 10,
-                            padding: '9px 12px', marginTop: 10 }}>
-                <PinIcon />
-                <span style={{ fontSize: 12, color: 'var(--tt-yellow-text)' }}>
-                  {school.school_label}
-                </span>
-              </div>
-            )}
-
-            <div style={{ height: 16 }} />
-
-            <label className="tt-label" htmlFor="password">PASSWORD</label>
-            <div style={{ position: 'relative' }}>
+            <div style={{ marginBottom: 24 }}>
+              <label className="tt-label" htmlFor="email">Email</label>
               <input
-                id="password" type={reveal ? 'text' : 'password'}
-                autoComplete="current-password"
-                className="tt-field" placeholder="Your app password"
-                style={{ paddingRight: 44 }}
-                value={password}
+                id="email" type="email" inputMode="email" autoComplete="email"
+                autoCapitalize="none" spellCheck="false"
+                className="tt-field" placeholder="name@example.com"
+                value={email}
                 aria-invalid={error ? 'true' : undefined}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => { setEmail(e.target.value); setSchool(null); }}
+                onBlur={detectSchool}
               />
-              <button
-                type="button"
-                onClick={() => setReveal((v) => !v)}
-                aria-label={reveal ? 'Hide password' : 'Show password'}
-                style={{ position: 'absolute', right: 6, top: 0, bottom: 0, width: 36,
-                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                         background: 'none', border: 'none', cursor: 'pointer',
-                         color: 'var(--tt-placeholder)' }}
-              >
-                <EyeIcon off={reveal} />
-              </button>
+              {school && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  background: 'var(--tt-yellow-tint)', borderRadius: 10,
+                  padding: '9px 12px', marginTop: 10,
+                }}>
+                  <PinIcon />
+                  <span style={{ fontSize: 12, color: 'var(--tt-yellow-text)' }}>
+                    {school.school_label}
+                  </span>
+                </div>
+              )}
             </div>
 
-            <div style={{ height: 22 }} />
+            <div style={{ marginBottom: 32 }}>
+              <label className="tt-label" htmlFor="password">Password</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  id="password" type={reveal ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  className="tt-field" placeholder="Your app password"
+                  style={{ paddingRight: 48 }}
+                  value={password}
+                  aria-invalid={error ? 'true' : undefined}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setReveal((v) => !v)}
+                  aria-label={reveal ? 'Hide password' : 'Show password'}
+                  style={{ position: 'absolute', right: 6, top: 0, bottom: 0, width: 40,
+                           display: 'flex', alignItems: 'center', justifyContent: 'center',
+                           background: 'none', border: 'none', cursor: 'pointer',
+                           color: 'rgba(84,110,122,0.5)' }}
+                >
+                  <EyeIcon off={reveal} />
+                </button>
+              </div>
+            </div>
 
             <button type="submit" className="tt-btn-primary"
                     disabled={busy || !email.trim() || !password}>
               {busy ? 'Signing in…' : 'Continue'}
+              {!busy && <ArrowIcon />}
             </button>
 
-            <p style={{ margin: '18px 0 0', fontSize: 11, color: 'var(--tt-muted)',
-                        textAlign: 'center', lineHeight: 1.6 }}>
-              No password yet? Ask your school&rsquo;s front desk.
+            <p style={{ margin: '28px 0 0', fontSize: 14, color: 'var(--tt-label)',
+                        textAlign: 'center' }}>
+              No password yet?{' '}
+              <span style={{ color: 'var(--tt-red)', fontWeight: 700 }}>
+                Contact front desk.
+              </span>
             </p>
           </form>
         )}
@@ -194,11 +207,21 @@ function PinIcon() {
 
 function EyeIcon({ off }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"
          stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M1.5 12S5 5.5 12 5.5 22.5 12 22.5 12 19 18.5 12 18.5 1.5 12 1.5 12z" />
       <circle cx="12" cy="12" r="3" />
       {off && <line x1="3" y1="21" x2="21" y2="3" />}
+    </svg>
+  );
+}
+
+function ArrowIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"
+         stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="5" y1="12" x2="19" y2="12" />
+      <polyline points="12 5 19 12 12 19" />
     </svg>
   );
 }
@@ -222,11 +245,12 @@ function BlockedNotice({ school, onReset }) {
 
   return (
     <div>
-      <div style={{ background: 'var(--tt-yellow-tint)', borderLeft: '3px solid var(--tt-yellow)',
-                    padding: 13, marginBottom: 20 }}>
-        <p style={{ margin: 0, fontSize: 12, color: 'var(--tt-yellow-text)', lineHeight: 1.6 }}>
+      <div style={{ background: 'var(--tt-yellow-tint)',
+                    border: '1px solid rgba(255,202,5,0.35)',
+                    borderRadius: 14, padding: 14, marginBottom: 22 }}>
+        <p style={{ margin: 0, fontSize: 13, color: 'var(--tt-yellow-text)', lineHeight: 1.6 }}>
           App access isn&rsquo;t switched on for this email yet. Ask the front desk at{' '}
-          <span style={{ fontWeight: 500 }}>{school.school_label}</span> to set up your parent password.
+          <span style={{ fontWeight: 700 }}>{school.school_label}</span> to set up your parent password.
         </p>
       </div>
 
@@ -234,17 +258,18 @@ function BlockedNotice({ school, onReset }) {
         href={wa.href}
         aria-disabled={wa['aria-disabled']}
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                 background: 'var(--tt-whatsapp)', borderRadius: 'var(--tt-radius)',
-                 padding: 14, textDecoration: 'none', marginBottom: 11, ...(wa.style || {}) }}
+                 height: 56, background: 'var(--tt-whatsapp)', borderRadius: 999,
+                 textDecoration: 'none', marginBottom: 12, ...(wa.style || {}) }}
       >
         <WhatsAppIcon />
-        <span style={{ fontSize: 14, fontWeight: 500, color: '#fff' }}>Message the school</span>
+        <span style={{ fontSize: 15, fontWeight: 600, color: '#fff',
+                       fontFamily: 'var(--tt-font-heading)' }}>Message the school</span>
       </Wrapper>
 
       <button type="button" onClick={onReset}
-              style={{ width: '100%', border: '1px solid var(--tt-border)',
-                       borderRadius: 'var(--tt-radius)', padding: 13, background: 'none',
-                       textAlign: 'center', fontSize: 13, color: 'var(--tt-muted)',
+              style={{ width: '100%', height: 52, border: '1px solid rgba(84,110,122,0.25)',
+                       borderRadius: 999, background: 'none',
+                       fontSize: 14, color: 'var(--tt-label)',
                        fontFamily: 'inherit', cursor: 'pointer' }}>
         Try a different email
       </button>

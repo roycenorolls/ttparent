@@ -100,7 +100,7 @@ export default function LoginPage() {
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <h1 className="tt-title">{blocked ? 'Almost there' : 'Welcome back'}</h1>
           <p className="tt-subtitle">
-            {blocked ? 'One step left before you can sign in.' : 'Ready for some learning fun?'}
+            {blocked ? 'One step left before you can sign in.' : 'Stay close to your loved ones'}
           </p>
           {!blocked && <p className="tt-eyebrow">Sign in with your school email</p>}
         </div>

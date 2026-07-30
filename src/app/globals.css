@@ -1,0 +1,110 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---------------------------------------------------------------------------
+   TutorTime brand palette.
+   Mirrors --tt-* in templates/default/admin.tpl so the parent app, the admin
+   system and the website read as one product.
+
+   Role notes:
+   - Blue is the identity surface (headers, membership card), not a button.
+   - Yellow carries the primary action; it is the only inviting colour we have.
+   - Red means failure only. Never use it for a CTA — it collides with the
+     delete/alert meaning it already carries across the admin.
+   --------------------------------------------------------------------------- */
+:root {
+  --tt-blue:        #003087;
+  --tt-blue-deep:   #00205C;
+  --tt-blue-soft:   #A9BEDC;
+  --tt-blue-tint:   #E6EDF7;
+
+  --tt-yellow:      #FFCA05;
+  --tt-yellow-tint: #FFF6D6;
+  --tt-yellow-text: #8B6510;
+
+  --tt-red:         #C8102E;
+  --tt-red-tint:    #FDECEE;
+  --tt-red-text:    #8E0B20;
+
+  --tt-logo-red:    #D93B34;
+  --tt-logo-amber:  #F2A93B;
+
+  --tt-bg:          #FFFDF0;
+  --tt-surface:     #FFFFFF;
+  --tt-border:      #E5E7EB;
+  --tt-text:        #111827;
+  --tt-muted:       #6B7280;
+  --tt-placeholder: #9CA3AF;
+
+  /* The brand has no green, but "your child arrived safely" is the one place
+     a conventional success colour earns its keep. Used only for check-in. */
+  --tt-green:       #0F7B3F;
+  --tt-green-tint:  #E8F4EC;
+
+  --tt-whatsapp:    #25D366;
+
+  --tt-radius:      12px;
+  --tt-radius-lg:   26px;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--tt-bg);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  color: var(--tt-text);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+/* Bottom nav safe area */
+main {
+  padding-bottom: calc(64px + env(safe-area-inset-bottom));
+}
+
+/* The login screen owns the full viewport and has no bottom nav. */
+body:has(.tt-auth) main { padding-bottom: 0; }
+
+.tt-field {
+  width: 100%;
+  background: var(--tt-surface);
+  border: 1px solid var(--tt-border);
+  border-radius: var(--tt-radius);
+  padding: 13px 14px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--tt-text);
+  outline: none;
+}
+.tt-field::placeholder { color: var(--tt-placeholder); }
+.tt-field:focus         { border-color: var(--tt-blue); }
+.tt-field[aria-invalid="true"] { border-color: var(--tt-red); }
+
+.tt-label {
+  display: block;
+  margin: 0 0 7px;
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--tt-muted);
+}
+
+.tt-btn-primary {
+  width: 100%;
+  background: var(--tt-yellow);
+  color: var(--tt-text);
+  border: none;
+  border-radius: var(--tt-radius);
+  padding: 14px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+}
+.tt-btn-primary:disabled { opacity: .55; cursor: default; }

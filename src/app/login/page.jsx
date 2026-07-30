@@ -76,7 +76,15 @@ export default function LoginPage() {
     <div className="tt-auth" style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column',
                                       background: 'var(--tt-blue)' }}>
       <header style={{ padding: '38px 24px 30px' }}>
-        <div style={{ marginBottom: 20 }}><TutorTimeMark onBlue /></div>
+        {/* Light tile so the mark keeps its brand red + amber against the
+            blue header, rather than recolouring the logo itself. */}
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          background: 'var(--tt-bg)', borderRadius: 14,
+          padding: '10px 12px', marginBottom: 20,
+        }}>
+          <TutorTimeMark size={38} />
+        </div>
         <h1 style={{ margin: 0, fontFamily: 'Georgia, "Times New Roman", serif',
                      fontSize: 23, fontWeight: 400, color: '#fff', lineHeight: 1.25 }}>
           {blocked ? 'Almost there' : 'Welcome back'}

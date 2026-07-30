@@ -27,8 +27,10 @@
   --tt-red-tint:    #FDECEE;
   --tt-red-text:    #8E0B20;
 
-  --tt-logo-red:    #D93B34;
-  --tt-logo-amber:  #F2A93B;
+  /* Sampled directly from img/logo-tabula.png — do not substitute the
+     brand red/yellow here, these are the mark's own colours. */
+  --tt-logo-red:    #DB433D;
+  --tt-logo-amber:  #EFAC43;
 
   --tt-bg:          #FFFDF0;
   --tt-surface:     #FFFFFF;

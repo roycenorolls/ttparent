@@ -1,13 +1,12 @@
 /**
- * The twin-T TutorTime mark.
+ * The twin-T Tabula / TutorTime mark — red T in front (lower left), amber T
+ * behind (upper right). Matches img/logo-tabula.png.
  *
- * `onBlue` swaps the red T for white — #D93B34 on #003087 is too low-contrast
- * to sit directly on the blue header.
+ * The brand colours are fixed. Never recolour the mark to suit a background:
+ * if contrast is the problem, put it on a light tile instead (see the login
+ * header) rather than swapping a T to white.
  */
-export default function TutorTimeMark({ size = 42, onBlue = false }) {
-  const back  = onBlue ? '#FFCA05' : 'var(--tt-logo-amber)';
-  const front = onBlue ? '#FFFFFF' : 'var(--tt-logo-red)';
-
+export default function TutorTimeMark({ size = 42 }) {
   return (
     <svg
       viewBox="0 0 40 34"
@@ -18,10 +17,10 @@ export default function TutorTimeMark({ size = 42, onBlue = false }) {
       style={{ display: 'block' }}
     >
       <title>TutorTime</title>
-      <rect x="15" y="0"  width="24" height="9"  fill={back} />
-      <rect x="23" y="0"  width="8"  height="23" fill={back} />
-      <rect x="1"  y="11" width="24" height="9"  fill={front} />
-      <rect x="9"  y="11" width="8"  height="23" fill={front} />
+      <rect x="15" y="0"  width="24" height="9"  fill="var(--tt-logo-amber)" />
+      <rect x="23" y="0"  width="8"  height="23" fill="var(--tt-logo-amber)" />
+      <rect x="1"  y="11" width="24" height="9"  fill="var(--tt-logo-red)" />
+      <rect x="9"  y="11" width="8"  height="23" fill="var(--tt-logo-red)" />
     </svg>
   );
 }

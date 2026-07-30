@@ -102,7 +102,7 @@ export default function LoginPage() {
           <p className="tt-subtitle">
             {blocked ? 'One step left before you can sign in.' : 'Stay close to your loved ones'}
           </p>
-          {!blocked && <p className="tt-eyebrow">Sign in with your school email</p>}
+          {!blocked && <p className="tt-eyebrow">Sign in with your email</p>}
         </div>
 
         {blocked ? (

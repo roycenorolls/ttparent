@@ -25,34 +25,52 @@ problems.
 ## Supported floor
 
 - **iOS / iPadOS 14.5+** (Safari 14.5 engine)
-- **Android WebView / Chrome 84+**
+- **Android WebView / Chrome 87+**
 
 iOS 14.5 rather than 14.0 is a deliberate, honest choice: flexbox `gap`
-lands in exactly 14.5 and is used pervasively throughout the app. Supporting
-14.0–14.4 would mean replacing `gap` with margin-based spacing in nearly
-every component — and leaving a permanent trap for future components. Rather
-than claim 14.0 support with a known cosmetic hole (spacing collapses, but
-content stays visible and usable), the floor is set where the code is
-actually correct. Android WebView 84 is the Chromium equivalent of the same
-`gap` boundary.
+lands in exactly iOS Safari 14.5 and is used pervasively throughout the app.
+Supporting 14.0–14.4 would mean replacing `gap` with margin-based spacing in
+nearly every component — and leaving a permanent trap for future components.
+Rather than claim 14.0 support with a known cosmetic hole (spacing
+collapses, but content stays visible and usable), the floor is set where the
+code is actually correct.
+
+Android WebView 87 is set by the `inset` shorthand (Chrome 87), which is the
+binding constraint there; flexbox `gap` on Chrome is the looser 84.
+
+> **Read version tables for iOS Safari, not desktop Safari.** The two
+> diverge for the same WebKit feature: flexbox `gap` and `inset` are both
+> desktop Safari **14.1** but iOS Safari **14.5**. There is no iOS Safari
+> 14.1 release at all — iOS goes 14.0 → 14.3 → 14.4 → 14.5. Reading the
+> desktop column understates the floor by a full release. Equally, check the
+> Chrome column separately rather than assuming Safari is always the
+> stricter of the two — `inset` is the counterexample that set the Android
+> floor above the `gap` boundary.
 
 Exact browserslist query strings are validated with `npx browserslist`
 during implementation; the intent above governs.
 
 ## What actually breaks at this floor
 
-Verified against the current code. Only three features fall below the floor:
+Verified against the current code, checking **both** the iOS Safari and
+Chrome columns. Three features fall below the floor:
 
-| Feature | Supported from | Where used | Failure mode |
-|---|---|---|---|
-| `dvh` units | Safari 15.4 | `globals.css` `.tt-auth`, `gallery/[updateId]/page.jsx` | Declaration invalid → height unset → layout collapses |
-| `aspect-ratio` | Safari 15.0 | `GalleryGrid.jsx` tiles, viewer video iframe | Tiles compute to zero height → invisible gallery |
-| `:has()` | Safari 15.4 | `globals.css` `body:has(.tt-auth) main` | Selector invalid → login screen gets stray 64px bottom padding |
+| Feature | iOS Safari | Chrome | Where used | Failure mode |
+|---|---|---|---|---|
+| `dvh` units | 15.4 | 108 | `globals.css` `.tt-auth`; `gallery/[updateId]/page.jsx` (`100dvh` **and** `60dvh`) | Declaration invalid → height unset → layout collapses |
+| `aspect-ratio` | 15.0 | 88 | `GalleryGrid.jsx` tiles, viewer video iframe | Tiles compute to zero height → invisible gallery |
+| `:has()` | 15.4 | 105 | `globals.css` `body:has(.tt-auth) main` | Selector invalid → login screen gets stray 64px bottom padding |
 
-Explicitly **not** problems at this floor, having been checked:
-`inset` (Safari 14.1), flex `gap` (14.5), `env(safe-area-inset-*)` (11.x),
-`backdrop-filter` with the `-webkit-` prefix already present (9),
-`IntersectionObserver` (12.2), CSS custom properties (9.3).
+Explicitly **not** problems at this floor, each checked on both engines:
+`inset` (iOS 14.5 / Chrome 87 — exactly at the floor on both, and the reason
+the Android floor is 87), flex `gap` (iOS 14.5 / Chrome 84),
+`env(safe-area-inset-*)` (iOS 11.x / Chrome 69), `backdrop-filter` with the
+`-webkit-` prefix already present (iOS 9 / Chrome 76),
+`IntersectionObserver` (iOS 12.2 / Chrome 51), CSS custom properties
+(iOS 9.3 / Chrome 49).
+
+`scrollbarWidth: 'none'` (`gallery/page.jsx`) is unsupported in WebKit but
+is purely cosmetic — the scrollbar simply shows on iOS. Left as-is.
 
 `overscroll-behavior: none` (`globals.css`) is *not* supported until Safari
 16 and will simply have no effect on iOS. It is left in place — suppressing
@@ -61,11 +79,17 @@ stylesheet's.
 
 ## CSS fallbacks
 
-- **`dvh` → duplicate declaration.** `min-height: 100vh;` followed by
-  `min-height: 100dvh;`. Engines below 15.4 ignore the second. Note that
-  `100vh`'s usual iOS problem — the collapsing URL bar — does not exist
-  inside a WebView container, since there is no URL bar. The fallback is
-  correct here, not merely tolerable.
+- **`dvh` → duplicate declaration**, at every site and for whichever
+  property it appears on. `min-height: 100vh;` then `min-height: 100dvh;`
+  for the login screen and viewer shell; **and `max-height: 60vh;` then
+  `max-height: 60dvh;`** for the viewer's image
+  (`gallery/[updateId]/page.jsx`) — without it the image renders
+  unconstrained and overflows the viewport. Engines below the floor ignore
+  the second declaration in each pair.
+
+  Note that `100vh`'s usual iOS problem — the collapsing URL bar — does not
+  exist inside a WebView container, since there is no URL bar. The fallback
+  is correct here, not merely tolerable.
 - **`aspect-ratio` → padding-top ratio box.** A wrapper with
   `padding-top: 100%` (square gallery tiles) or `56.25%` (16/9 video
   iframe), with the content absolutely positioned to fill it.
@@ -92,7 +116,7 @@ because the failure mode is total content loss rather than degradation.
 ## Enforcement
 
 A one-time fix sweep decays — the next component will reach for `dvh` or
-`aspect-ratio` again. Enforcement is build-time, and needs three distinct
+`aspect-ratio` again. Enforcement is build-time, and needs four distinct
 pieces because no single tool covers this codebase:
 
 1. **`browserslist` pinned in `package.json`** — drives SWC's JS

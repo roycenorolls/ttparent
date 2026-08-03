@@ -81,10 +81,58 @@ the update (`status='deleted'`) and leaves media rows in place, so tags stay
 consistent with that model — they simply stop being reachable, because the
 parent-facing queries already filter on `pu.status='active'`.
 
+## Multi-class teachers and the class default
+
+Teachers are already assigned to classes by the system: `class_arrangement`
+has two teacher slots (`sid1`, `sid2`), and a teacher may appear in several
+rows. `parent_comms.php` already lists every class a teacher holds
+(`WHERE ca.sid1 = $sid OR ca.sid2 = $sid`) in the posting form's dropdown,
+and `parent_update_save.php` already requires a non-admin to supply a `caid`
+and verifies it is genuinely one of theirs.
+
+Two consequences for this spec:
+
+- **A roster always exists.** Because teachers can never post school-wide,
+  every teacher-authored update has a `caid`, so the tagging screen always
+  has a class roster to render. (The `caid IS NULL` case is admin-only, and
+  is out of scope — see below.)
+- **Single-class teachers already get the desired default.** Their dropdown
+  has exactly one option, so sharing is automatically scoped to their class
+  with no interaction.
+
+**Fix required for multi-class teachers.** For non-admins the dropdown has
+no placeholder option — `parent_comms.php` adds the empty
+`<option value="">` only when `$is_admin`. The browser therefore
+pre-selects the *first* class, which is whichever sorts first alphabetically
+(`ORDER BY cl.class_name`). A teacher holding two classes who uploads a
+batch without touching the dropdown silently posts it to the wrong class,
+showing one class's children to another class's parents. This is a live
+privacy hazard independent of tagging.
+
+The change: when a teacher holds more than one class, prepend a disabled,
+pre-selected `— Select class —` placeholder with an empty value, so no class
+is chosen by default and posting requires a deliberate selection. When they
+hold exactly one class, keep it auto-selected as today.
+
+No server-side change is needed — `parent_update_save.php:31-34` already
+rejects an empty `caid` from a non-admin and redirects with `msg=error`.
+The existing enforcement is the reason this is a UI-only fix.
+
+**Joint activities across two of a teacher's classes** (a combined session
+photographed as one batch) are handled by posting the batch once per class
+and tagging only that class's children each time. `caid` stays
+single-valued. This costs a duplicate upload for genuinely joint events, but
+keeps the authorization model intact: an update is visible only to the
+parents of its own `caid`, so a child tagged from a *different* class would
+be invisible to their own parent while appearing in another class's feed.
+Multi-class updates would require a join table and a rewrite of
+`authorizedScope()` — deferred until teachers ask for it.
+
 ## Teacher-side tagging screen
 
-**Posting stays exactly as it is today.** `parent_comms.php`'s form and
-`ops/parent_update_save.php`'s upload/insert logic are unchanged.
+**Posting is otherwise unchanged.** Beyond the class-placeholder fix above,
+`parent_comms.php`'s form and `ops/parent_update_save.php`'s upload/insert
+logic stay as they are.
 
 New: after a successful save, `parent_update_save.php` redirects to
 `admin/parent_update_tag.php?update_id={id}` instead of straight back to
@@ -217,7 +265,10 @@ here rather than solved in this spec.
 - Automated face detection (see above).
 - App-wide CSRF tokens (see above).
 - Tagging on school-wide (`caid IS NULL`) admin posts — no single class
-  roster to tag against in this version.
+  roster to tag against in this version. Teachers are unaffected: they can
+  never post school-wide.
+- Multi-class updates (one post targeting several `caid`s) — see
+  "Multi-class teachers" above.
 - Any change to the existing upload pipeline (R2/Cloudflare Stream), file
   types, or the existing posting form.
 - Photo-level filtering in the parent app gallery (showing only the tagged

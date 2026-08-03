@@ -72,22 +72,36 @@ A media row with zero tag rows is untagged → whole-class visibility
 
 New: after a successful save, `parent_update_save.php` redirects to
 `admin/parent_update_tag.php?update_id={id}` instead of straight back to
-`parent_comms.php?msg=saved`. This new page:
+`parent_comms.php?msg=saved` — but only when the update has taggable media
+(see "No taggable media" below). This new page:
 
+- **Ownership check first**, mirroring `ops/parent_update_delete.php`: load
+  the `parent_updates` row for `update_id`, and reject (redirect back with
+  an error) unless the acting `sid` is admin or matches `pu.teacher_sid`.
+  Without this, any logged-in teacher could load or submit tags for another
+  teacher's update by guessing/incrementing `update_id` in the URL.
 - Loads the update's media rows (`parent_update_media` where
   `update_id = X`), rendering each photo/video as a thumbnail.
-- Loads the class roster for that update's `caid` — same join pattern
-  `ParentController::authorizedScope()` already uses (`child_class` →
-  `child`, `status='enabled'`, `pending='no'`), just returning child rows
-  instead of `caid`s. For a school-wide update (`caid IS NULL`), there is no
-  single roster to show — tagging is only available for class-scoped
-  updates in this first version.
+- Loads the class roster for that update's `caid`: a new query — `child_class`
+  joined to `child`, filtered by that specific `caid` with
+  `status='enabled'` and `pending='no'` (the same predicates
+  `authorizedScope()` uses, but a different query — that method finds a
+  *parent's own* class `caid`s, it doesn't list a class's children). For a
+  school-wide update (`caid IS NULL`), there is no single roster to show —
+  tagging is only available for class-scoped updates in this first version.
 - For each thumbnail, a multi-select checklist of that roster lets the
   teacher check off which child(ren) appear in it.
-- Submits to a new `ops/parent_update_tag_save.php`, which replaces the tag
-  rows for each media_id (delete-then-insert, scoped to that update's own
-  media so a teacher can't tag media outside their own class) with the
+- Submits to a new `ops/parent_update_tag_save.php`, which repeats the same
+  ownership check, then replaces the tag rows for each media_id
+  (delete-then-insert, scoped to media belonging to that update) with the
   checked `cid`s, stamping `tagged_by` as the acting `sid`.
+
+**No taggable media**: announcements and most PDFs have zero photo/video
+rows. If the saved update has no media rows at all, `parent_update_save.php`
+skips the tagging redirect entirely and goes straight to
+`parent_comms.php?msg=saved`, same as today. The "Tag children" link added
+to the Recent Updates list (below) is likewise only shown for rows with
+`media_count > 0`.
 
 Tagging is optional and can be skipped (leaving media untagged = whole-class
 visible, matching today's behavior) and can be revisited later: the

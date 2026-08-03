@@ -72,7 +72,7 @@ export default function HomePage() {
       <DailyQuote />
       <CheckInCard child={child} status={status} />
       <HappeningNow slots={slots} />
-      <UpdatesFeed updates={updates} />
+      <UpdatesFeed updates={updates.filter(u => !u.child_ids?.length || u.child_ids.includes(activeId))} />
       {child?.teacher && <TeacherWhatsApp teacher={child.teacher} />}
     </div>
   );

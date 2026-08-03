@@ -2,10 +2,12 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 
-export default function GalleryGrid({ updates, filter }) {
-  const filtered = filter === 'all'
+export default function GalleryGrid({ updates, filter, activeId }) {
+  const byType = filter === 'all'
     ? updates
     : updates.filter(u => u.type === filter || (filter === 'reports' && u.type === 'pdf'));
+
+  const filtered = byType.filter(u => !u.child_ids?.length || u.child_ids.includes(activeId));
 
   const grouped = groupByDate(filtered);
 

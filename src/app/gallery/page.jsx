@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import GalleryGrid from '@/components/GalleryGrid';
+import ChildSwitcher from '@/components/ChildSwitcher';
 
 const FILTERS = [
   { key: 'all',    label: 'All' },
@@ -11,14 +12,23 @@ const FILTERS = [
 ];
 
 export default function GalleryPage() {
-  const [updates, setUpdates] = useState([]);
-  const [filter,  setFilter]  = useState('all');
-  const [loading, setLoading] = useState(true);
+  const [updates,  setUpdates]  = useState([]);
+  const [children, setChildren] = useState([]);
+  const [activeId, setActiveId] = useState(null);
+  const [filter,   setFilter]   = useState('all');
+  const [loading,  setLoading]  = useState(true);
 
   useEffect(() => {
     api.updates()
       .then(d => setUpdates(d.updates || []))
       .finally(() => setLoading(false));
+
+    api.membership()
+      .then(data => {
+        setChildren(data.children || []);
+        if (data.children?.length) setActiveId(data.children[0].id);
+      })
+      .catch(() => {});
   }, []);
 
   return (
@@ -26,6 +36,10 @@ export default function GalleryPage() {
       {/* Header */}
       <div style={{ padding: '0 16px 12px' }}>
         <div style={{ fontSize: 20, fontWeight: 500, color: 'var(--tt-text)' }}>Gallery</div>
+      </div>
+
+      <div style={{ marginBottom: 12 }}>
+        <ChildSwitcher children={children} activeId={activeId} onChange={setActiveId} />
       </div>
 
       {/* Filter pills */}
@@ -48,7 +62,7 @@ export default function GalleryPage() {
 
       {loading
         ? <div style={{ padding: 32, textAlign: 'center', color: 'var(--tt-muted)' }}>Loading…</div>
-        : <GalleryGrid updates={updates} filter={filter} />
+        : <GalleryGrid updates={updates} filter={filter} activeId={activeId} />
       }
     </div>
   );

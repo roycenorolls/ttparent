@@ -54,7 +54,10 @@ no concept of "which child." Changes:
 - Also fetch `api.membership()` (the same call `page.jsx` already makes) to
   get the parent's `children` list.
 - Add local state `activeId`, defaulting to the first child once children
-  load.
+  load — same pattern as `page.jsx`. There is no "All children" option;
+  unlike the type filter, the child filter always has exactly one active
+  child selected (matching how the home page's `ChildSwitcher` already
+  behaves). This is a deliberate choice for consistency, not an oversight.
 - Render `<ChildSwitcher>` above the existing type-filter pill row
   (All / Photos / Videos / Reports).
 - Pass `activeId` down to `GalleryGrid`.
@@ -68,6 +71,12 @@ has one child or fewer, so single-child parents see no UI change.
 new child filter combine with AND semantics (e.g. "Photos" + "Aisha" shows
 only Aisha's photos). The child-filter step uses the same
 present-vs-missing `child_id` rule described above.
+
+Concretely, the child filter must be applied as its own `.filter()` step,
+separate from the existing `filter === 'all' ? updates : updates.filter(...)`
+type-filter line — the child filter always runs regardless of whether the
+type filter is `'all'`, so the two conditions don't collapse into one
+short-circuit that accidentally skips child filtering when type is `'all'`.
 
 ## Out of scope
 

@@ -118,15 +118,23 @@ No server-side change is needed — `parent_update_save.php:31-34` already
 rejects an empty `caid` from a non-admin and redirects with `msg=error`.
 The existing enforcement is the reason this is a UI-only fix.
 
-**Joint activities across two of a teacher's classes** (a combined session
-photographed as one batch) are handled by posting the batch once per class
-and tagging only that class's children each time. `caid` stays
-single-valued. This costs a duplicate upload for genuinely joint events, but
-keeps the authorization model intact: an update is visible only to the
-parents of its own `caid`, so a child tagged from a *different* class would
-be invisible to their own parent while appearing in another class's feed.
-Multi-class updates would require a join table and a rewrite of
-`authorizedScope()` — deferred until teachers ask for it.
+**Classes never join.** Each `class_arrangement` has its own schedule —
+`ca.day` (a comma-separated list of `mon`–`fri`) and `ca.shift` — and
+sessions never overlap, so a teacher is only ever with one class at a time.
+There is no combined-session case: any one batch of photos belongs to
+exactly one class. A single-valued `caid` is therefore correct by design
+rather than a limitation to work around, and multi-class updates (a join
+table, a rewritten `authorizedScope()`) are not needed.
+
+That schedule data could in principle drive a smarter default — filtering
+the dropdown to classes meeting today would often leave exactly one option.
+It is deliberately not used. The blank placeholder is unambiguously correct
+in every case, whereas a schedule-derived default is correct only most of
+the time and needs fallback handling for the rest (no class meets today
+because the teacher is posting the next day; two classes meet today in
+different shifts, which `ca.shift` alone cannot disambiguate because the
+TutorTime DB holds no shift-to-clock-time mapping). The extra machinery buys
+a saved click on a form that is already only used a few times a day.
 
 ## Teacher-side tagging screen
 
@@ -267,8 +275,10 @@ here rather than solved in this spec.
 - Tagging on school-wide (`caid IS NULL`) admin posts — no single class
   roster to tag against in this version. Teachers are unaffected: they can
   never post school-wide.
-- Multi-class updates (one post targeting several `caid`s) — see
-  "Multi-class teachers" above.
+- Multi-class updates (one post targeting several `caid`s) — not needed;
+  classes never join. See "Multi-class teachers" above.
+- Schedule-aware class defaulting using `ca.day` / `ca.shift` — considered
+  and deliberately rejected, see the same section.
 - Any change to the existing upload pipeline (R2/Cloudflare Stream), file
   types, or the existing posting form.
 - Photo-level filtering in the parent app gallery (showing only the tagged

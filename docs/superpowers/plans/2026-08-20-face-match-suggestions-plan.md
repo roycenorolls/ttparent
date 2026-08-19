@@ -12,9 +12,10 @@
 
 **No test framework exists anywhere in this codebase** (no `phpunit.xml`/`tests/` in `parent-app-api`, zero business-logic tests in the legacy PHP app — confirmed by search). Every task below uses concrete manual verification steps (curl commands, SQL queries, browser checks with expected output) instead of automated tests, matching how the 2026-08-03 tagging feature that this one extends was itself built and verified.
 
-**Two things this plan decides that the spec left open**, flagged here so they're not mistaken for spec requirements:
+**Three things this plan decides or corrects relative to the spec**, flagged here so they're not mistaken for what was actually approved:
 - **Settings page discoverability**: the spec defines the route but not how a parent finds it. This plan adds a single "Privacy settings" link from the Card page — the closest existing "about me" screen.
 - **Internal API key**: the spec says the deindex endpoint uses "the same pattern" as the suggestions endpoint. This plan uses one shared key (`config('services.internal.key')`) for both, rather than two near-identical secrets — same trust boundary (legacy admin app → Laravel), no reason to split it.
+- **Registration photo access (corrects a spec error)**: the spec's "System boundary" section describes `ops/getphoto.php` as "already an unauthenticated, publicly-fetchable endpoint" Laravel can `Http::get()`. That's wrong — it resolves the school DB from `$_SESSION['scid']` and redirects to `admin/school_select.php` with no session, which a stateless server-to-server call never has. Task 8 reads the photo file directly off disk instead (see that task's note for why this is reliable in both local and production layouts). Without this fix, every consent grant would fail.
 
 ---
 
@@ -116,13 +117,11 @@ In `config/services.php`, add after the existing `'ses'` block (reuses the same 
     'internal' => [
         'key' => env('INTERNAL_API_KEY'),
     ],
-
-    'main_app' => [
-        'url' => env('MAIN_APP_URL', 'https://ttimesys.net'),
-    ],
 ```
 
-- [ ] **Step 2: Add `INTERNAL_API_KEY` and confirm `MAIN_APP_URL` locally**
+(No `main_app` URL config — Task 8 reads the registration photo straight off disk instead of over HTTP, since `ops/getphoto.php` turns out to require a PHP session `parent-app-api` can't carry. See Task 8 for why.)
+
+- [ ] **Step 2: Add `INTERNAL_API_KEY` locally**
 
 Generate a random key and add to `parent-app-api/.env` (create if it doesn't already have one — check first, this file is gitignored):
 ```bash
@@ -131,9 +130,7 @@ php -r "echo bin2hex(random_bytes(32)), PHP_EOL;"
 Add the output to `.env`:
 ```
 INTERNAL_API_KEY=<paste generated value>
-MAIN_APP_URL=http://localhost/tutortime
 ```
-(Adjust `MAIN_APP_URL` to whatever URL your local legacy PHP app is actually served from — it must be reachable from wherever `php artisan serve` runs.)
 
 - [ ] **Step 3: Verify config loads**
 
@@ -654,9 +651,10 @@ git commit -m "Wire internal suggestion-generation and deindex routes"
 At the top of the file, alongside the existing `use` statements:
 ```php
 use App\Services\RekognitionService;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 ```
+
+**Why the registration photo is read from disk, not fetched over HTTP:** the spec assumed `ops/getphoto.php?cid={id}` was a plain unauthenticated URL Laravel could `Http::get()`. It isn't — `config/config.php:58-72` resolves the school database from `$_SESSION['scid']`, and with no session (`$GLOBALS['dbname']` empty) it redirects to `admin/school_select.php` instead of serving the photo. A stateless server-to-server call from Laravel never carries that session, so every fetch would silently return the redirect page's HTML instead of a photo, and `IndexFaces` would fail every time. Fixed by reading the file directly: `parent-app-api/config/database.php`'s own comment already establishes that `dirname(base_path(), 2)` reaches `secrets.php` one level above the main app's document root in both local and production layouts — meaning `parent-app-api` is nested *inside* the main app's web root, so `dirname(base_path(), 1)` is exactly `$GLOBALS['dir']` in the legacy app, and the registration photo (stored by `ops/editregistration.php`'s `editChildForm` upload handler at `uploads/{school_key}/childphotos/{cid}`, no extension) is a plain file Laravel can read with no network call and no session at all.
 
 - [ ] **Step 2: Add the method**
 
@@ -720,9 +718,15 @@ Add this method to `ParentController`, after `childProfile()`:
                 $existing = DB::connection($conn)->table('child_face_index')->where('cid', $id)->first();
 
                 if (!$existing) {
-                    $photoUrl = rtrim(config('services.main_app.url'), '/') . '/ops/getphoto.php?cid=' . $id;
-                    $bytes    = Http::timeout(15)->get($photoUrl)->body();
-                    $faceId   = $rekognition->indexFace($conn, $bytes, (string) $id);
+                    // The registration photo lives on disk, not behind a
+                    // URL Laravel can actually fetch — see Task 8 Step 1's
+                    // note on why this reads the file directly instead.
+                    $photoPath = dirname(base_path(), 1) . "/uploads/{$conn}/childphotos/{$id}";
+                    if (!is_file($photoPath)) {
+                        throw new \RuntimeException('no_registration_photo');
+                    }
+                    $bytes  = file_get_contents($photoPath);
+                    $faceId = $rekognition->indexFace($conn, $bytes, (string) $id);
 
                     if (!$faceId) {
                         throw new \RuntimeException('no_face_detected');
@@ -1166,12 +1170,20 @@ git add ops/inactive.php
 git commit -m "De-index a child's face on immediate disenrollment"
 ```
 
-### Task 16: Hook disenrollment (future-dated / daily cron path)
+### Task 16: Hook disenrollment (future-dated path, `updateSubRoutine()`)
 
 **Files:**
 - Modify: `inc/functions.php:659-668`
 
-- [ ] **Step 1: Loop the de-index call over the cron's disabled cids**
+`updateSubRoutine()` — despite the "daily subroutine" wording in its own
+code comments (and in the spec this plan implements) — isn't actually on a
+schedule: it's called from `admin/magic_login.php`, `ops/login.php`, and
+`ops/magic_login_otp.php`, i.e. on the next staff login at that school, not
+via cron. This doesn't change what needs hooking here, only how promptly a
+future-dated disenrollment's de-index actually fires in practice (on the
+next login after the effective date, not overnight).
+
+- [ ] **Step 1: Loop the de-index call over this subroutine's disabled cids**
 
 Current:
 ```php
@@ -1204,13 +1216,13 @@ New (only the addition, right after the `UPDATE child SET status='disabled'` cal
 
 - [ ] **Step 2: Manually verify**
 
-This subroutine runs as part of the existing daily cron (`updateSubRoutine()` per the login-system memory). Set up a test child with a future-dated `inactive` row whose `instart_date` is today or earlier and `face_match_consent='yes'` + a `child_face_index` row, then manually trigger whatever admin action runs this subroutine locally (check `inc/functions.php` for how `updateSubRoutine()` is invoked, or call the containing function directly via a one-off script), and confirm the same before/after check as Task 15.
+Set up a test child with a future-dated `inactive` row whose `instart_date` is today or earlier and `face_match_consent='yes'` + a `child_face_index` row, then trigger `updateSubRoutine()` the way it actually runs — log in as any staff member at that school (via `ops/login.php` or the magic-link flow), which calls it as a side effect of login — and confirm the same before/after check as Task 15.
 
 - [ ] **Step 3: Commit**
 
 ```bash
 git add inc/functions.php
-git commit -m "De-index a child's face on future-dated (cron) disenrollment"
+git commit -m "De-index a child's face on future-dated disenrollment (updateSubRoutine)"
 ```
 
 ### Task 17: Hook `photo_restriction` flip
@@ -1345,10 +1357,15 @@ In `makePageContent()`, right after the existing ownership-check block (after th
 
 ```php
     if (!$update['tags_reviewed_at']) {
+        // Matches SuggestionController::generate's own file_type filter
+        // exactly — an update made only of video/PDF media (which never
+        // gets a cached row, since Laravel skips non-image types) would
+        // otherwise stay permanently "needs suggestions" and re-call the
+        // endpoint on every single visit.
         $needs_suggestions = mysqli_query($conn, "
             SELECT 1 FROM parent_update_media m
             LEFT JOIN parent_update_media_suggestion s ON s.media_id = m.id
-            WHERE m.update_id=$update_id AND m.status='active' AND s.id IS NULL
+            WHERE m.update_id=$update_id AND m.status='active' AND m.file_type LIKE 'image/%' AND s.id IS NULL
             LIMIT 1
         ");
         if ($needs_suggestions && mysqli_num_rows($needs_suggestions) > 0) {

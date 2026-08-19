@@ -113,9 +113,25 @@ gated by an `X-Api-Key` header rather than Sanctum, since there's no parent
 session to authenticate against for an admin-to-API call):
 
 - `POST /api/internal/updates/{update_id}/suggestions`, gated by
-  `X-Api-Key`, accepting `scid` in the body (the legacy app already knows
-  its own school context via `$GLOBALS['conn']`; there's no Sanctum session
-  to infer it from here). Routed to a new `SuggestionController::generate`.
+  `X-Api-Key` checked via `hash_equals` against a new
+  `config('services.suggestions.key')` — the exact `TourBookingController`
+  pattern, not just a similar one. Accepts a required string `school` field
+  in the body (the same key `config('schools')` and `DB::connection()` use,
+  e.g. `'kemang'`, `'pi'` — **not** the numeric `scid`, which is a
+  different identifier that only exists on the school-DB side and has no
+  meaning to Laravel's connection resolution). The legacy app already
+  computes this exact string as `$GLOBALS['school_key']`
+  (`config/config.php:165`, in the main app, outside this repo) — the DB
+  prefix stripped from the school's dbname — so passing it through is
+  direct, not a new lookup. Laravel validates it with
+  `array_key_exists($school, config('schools'))` before calling
+  `DB::connection($school)`, identically to how `TourBookingController`
+  validates its own `school` field, including the same `$request->validate([...])`
+  shape (`school` required string, `update_id` from the route). Routed to
+  a new `SuggestionController::generate`, under the same
+  `throttle:20,1` middleware group `TourBookingController` uses — this
+  endpoint is called at most once per tag-page visit, so that ceiling is
+  generous, not a real constraint.
 - This endpoint performs the full suggestion-generation algorithm below
   (search, resolve, filter, threshold) and **writes its results directly
   into `parent_update_media_suggestion`** in that school's MySQL DB — the
@@ -166,9 +182,10 @@ backfill job:
   `IndexFaces` against that school's collection using the existing
   registration photo, stores the returned face id in `child_face_index`,
   **then** persists `face_match_consent='yes'`. If `IndexFaces` throws (AWS
-  timeout,
-  throttling, or a missing/corrupt registration photo — `getphoto.php`
-  returning a 404/placeholder), the endpoint returns an error to the
+  timeout, throttling, or a missing/unusable registration photo —
+  `getphoto.php` never 404s, it returns HTTP 200 with a `notavailable.jpg`
+  placeholder for a child with no photo on file, which Rekognition itself
+  rejects as faceless), the endpoint returns an error to the
   parent-app toggle (it visibly fails to turn on, with a "couldn't process
   photo, try again" message) and `face_match_consent` stays `'no'`. This
   ordering is deliberate: it's the only way to guarantee `child_face_index`
@@ -190,10 +207,15 @@ backfill job:
 
 **Disenrollment** isn't a consent action but has the same effect and is
 easy to miss: wherever a child's enrollment is withdrawn (`child.status`
-flipping to `'disabled'`, e.g. in `ops/inactive.php`) should also de-index,
-the same as an explicit consent-off. Otherwise a disenrolled child's face
-stays searchable indefinitely with no parent-facing toggle left to turn it
-off.
+flipping to `'disabled'`) should also de-index, the same as an explicit
+consent-off. This has **two** call sites, not one — `ops/inactive.php`
+handles an immediate-effective-date disenrollment, but a future-dated one
+is instead applied later by the daily cron subroutine in
+`inc/functions.php` (around line 667). Both paths must trigger the same
+de-index effect; hooking only the immediate path would leave every
+future-dated disenrollment's child searchable until someone notices.
+Otherwise a disenrolled child's face stays searchable indefinitely with no
+parent-facing toggle left to turn it off.
 
 ## Suggestion generation
 

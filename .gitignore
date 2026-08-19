@@ -13,3 +13,6 @@
 .DS_Store
 *.pem
 npm-debug.log*
+
+# git worktrees (superpowers:using-git-worktrees)
+.worktrees/

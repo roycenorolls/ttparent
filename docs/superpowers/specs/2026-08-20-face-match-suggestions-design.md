@@ -162,10 +162,26 @@ URL, so this is a real HTTP fetch per photo, not a URL passthrough.
 
 ## Indexing pipeline
 
-One Rekognition Face Collection **per school** (`collection_id` scoped to
-`scid`, matching the existing per-school-DB partitioning), not one global
-collection — a photo from one school can never suggest a child from
-another, and per-school collections stay small, which helps match quality.
+One Rekognition Face Collection **per school**, not one global collection
+— a photo from one school can never suggest a child from another, and
+per-school collections stay small, which helps match quality.
+`collection_id` is the literal `school_key` string (`'kemang'`, `'pi'`,
+etc. — the same value used for `DB::connection()`), so it's derivable from
+data already in hand at every call site, never a separate value to look up
+or store.
+
+**Collection creation.** Rekognition requires a collection to exist before
+any `IndexFaces` or `SearchFacesByImage` call against its id will succeed
+— a nonexistent collection throws `ResourceNotFoundException`, not an
+empty result. There's no batch setup step (the same "no batch backfill"
+principle as indexing itself), so `SuggestionController` and the
+consent-flip endpoint both call `CreateCollection` defensively before their
+first real Rekognition call each request, catching and ignoring the
+`ResourceInUseException` it throws when the collection already exists (the
+normal case, after the first). This makes collection existence
+self-healing per school with no explicit provisioning step, first
+consent-flip or first suggestion request for a school creates it, whichever
+happens first.
 
 Indexing only happens in direct reaction to a consent change, no batch
 backfill job:

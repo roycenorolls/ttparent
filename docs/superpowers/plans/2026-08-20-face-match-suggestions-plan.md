@@ -610,6 +610,8 @@ Route::middleware('throttle:20,1')->post('/internal/updates/{update_id}/suggesti
 Route::middleware('throttle:20,1')->post('/internal/faces/deindex', [FaceDeindexController::class, 'deindex']);
 ```
 
+Laravel's default throttle key is `sha1(domain.'|'.ip)`, not per-route — these two routes share one 20/min bucket, and every school's admin app calls through the same server-to-server IP, so in practice all seven schools share it too. Degradation is graceful either way (`admin/parent_update_tag.php` renders with zero suggestions on any failure, per Chunk 6), so this isn't fixed here, just worth watching under real multi-school load — bump the rate if teachers across schools start seeing suggestions silently not appear during busy periods.
+
 - [ ] **Step 2: Verify routes are registered**
 
 ```bash
@@ -747,6 +749,8 @@ Add this method to `ParentController`, after `childProfile()`:
         return response()->json(['ok' => true, 'face_match_consent' => 'yes']);
     }
 ```
+
+**Known limitation, not fixed here:** `$GLOBALS['allowed_photo_ext']` in `config/config.php` accepts GIF for registration photos, but Rekognition only supports JPEG/PNG — a child with a GIF registration photo would get "couldn't process photo, try again" from `IndexFaces` throwing, and retrying would never help (the message implies a transient failure, but this one isn't). Rare in practice and not addressed in this plan; if it comes up, the fix belongs in `RekognitionService::indexFace()` (convert non-JPEG/PNG input before indexing), not in this endpoint.
 
 - [ ] **Step 3: Add the route**
 

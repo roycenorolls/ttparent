@@ -22,7 +22,8 @@ below) needed to make "don't re-suggest after review" work correctly.
 ## Consent & data model
 
 Every enrolled child already has a registration ID photo
-(`ops/getphoto.php?cid=X`, uploaded via `admin/editregistration.php`) and an
+(`ops/getphoto.php?cid=X`, uploaded via the form in
+`admin/editregistration.php` and saved by `ops/editregistration.php`) and an
 existing `photo_restriction` flag (`admin/print_photo_restriction.php`)
 opting some children out of photo use entirely. The registration photo was
 never collected for biometric matching, so reusing it for that purpose
@@ -133,9 +134,14 @@ session to authenticate against for an admin-to-API call):
   validates its own `school` field, including the same `$request->validate([...])`
   shape (`school` required string, `update_id` from the route). Routed to
   a new `SuggestionController::generate`, under the same
-  `throttle:20,1` middleware group `TourBookingController` uses — this
-  endpoint is called at most once per tag-page visit, so that ceiling is
-  generous, not a real constraint.
+  `throttle:20,1` middleware group `TourBookingController` uses as a
+  starting point — worth confirming during implementation whether Laravel
+  keys that throttle by caller IP, since every school's admin app calls
+  through the same server-to-server IP (unlike `TourBookingController`,
+  which fields requests from tutorid's own visitors, not from this
+  codebase's own backend); if so, several teachers across different
+  schools tagging in the same minute could plausibly hit a 20/min ceiling
+  that felt generous per-school but isn't once every school shares it.
 - This endpoint performs the full suggestion-generation algorithm below
   (search, resolve, filter, threshold) and **writes its results directly
   into `parent_update_media_suggestion`** in that school's MySQL DB — the
@@ -194,25 +200,36 @@ backfill job:
   `photo_restriction != 'yes'` for that child (the absolute block from
   above; the frontend toggle should already prevent this state, but the
   server-side check is what actually enforces it) and rejects the request
-  if it fails. If a `child_face_index` row already exists for this `cid`
-  (e.g. a retried/duplicate `PATCH` after a slow first response) the call
-  is a no-op that returns success immediately rather than attempting a
-  second `IndexFaces` — `uq_cid` makes a second insert impossible anyway,
-  so this is just avoiding a wasted AWS call. Otherwise, Laravel calls
-  `IndexFaces` against that school's collection using the existing
-  registration photo, stores the returned face id in `child_face_index`,
-  **then** persists `face_match_consent='yes'`. Two failure shapes are
-  treated identically: `IndexFaces` throwing (AWS timeout, throttling), and
-  `IndexFaces` succeeding with an **empty `FaceRecords` array** — it does
-  not throw when it detects zero faces in the image, it returns HTTP 200
-  with nothing indexed, which is exactly what happens for a child with no
-  usable registration photo (`getphoto.php` never 404s either; a missing
-  photo is HTTP 200 with a `notavailable.jpg` placeholder, a faceless
-  image). Either case, the endpoint returns an error to the
+  if it fails. The rest of this step runs inside **one DB transaction**,
+  not just a fixed call order — ordering alone (index, then insert, then
+  persist the column) only guarantees the two can't disagree if nothing
+  ever fails or crashes between steps, and a process dying between the
+  `child_face_index` insert and the `face_match_consent` update would
+  otherwise leave a child indexed and AWS-matchable while consent still
+  reads `'no'`. If a `child_face_index` row already exists for this `cid`
+  (e.g. a retried/duplicate `PATCH` after a slow first response, or
+  recovery from exactly the crash above) the transaction skips a second
+  `IndexFaces` call — `uq_cid` makes a second insert impossible anyway —
+  but **still persists `face_match_consent='yes'`** before committing;
+  skipping only the AWS call, not the whole no-op, is what stops a retry
+  from silently leaving consent at `'no'` forever after the child is
+  already indexed. Otherwise, Laravel calls `IndexFaces` against that
+  school's collection using the existing registration photo, stores the
+  returned face id in `child_face_index`, and persists
+  `face_match_consent='yes'` — all inside the same transaction, so a
+  failure at any point rolls back every part of it rather than leaving a
+  partial state. Two failure shapes are treated identically: `IndexFaces`
+  throwing (AWS timeout, throttling), and `IndexFaces` succeeding with an
+  **empty `FaceRecords` array** — it does not throw when it detects zero
+  faces in the image, it returns HTTP 200 with nothing indexed, which is
+  exactly what happens for a child with no usable registration photo
+  (`getphoto.php` never 404s either; a missing photo is HTTP 200 with a
+  `notavailable.jpg` placeholder, a faceless image). Either case, the
+  transaction rolls back, the endpoint returns an error to the
   parent-app toggle (it visibly fails to turn on, with a "couldn't process
-  photo, try again" message) and `face_match_consent` stays `'no'`. This
-  ordering is deliberate: it's the only way to guarantee `child_face_index`
-  and `face_match_consent='yes'` can never disagree — a parent is never
+  photo, try again" message), and `face_match_consent` stays `'no'`. The
+  transaction is what actually guarantees `child_face_index` and
+  `face_match_consent='yes'` can never disagree — a parent is never
   shown "consent on" for a child who isn't actually indexed and therefore
   will never be matched.
 - Consent flips to `'no'` → the column is set to `'no'`, the
@@ -412,9 +429,10 @@ the save can tell AI was involved.
   exactly as today.
 - **`photo_restriction='yes'` is an absolute block** on ever setting
   `face_match_consent='yes'` for that child, enforced server-side — but
-  `photo_restriction` is independently editable later, in
-  `admin/editregistration.php`, by staff who have no visibility into
-  whether this feature's consent was already granted. Setting
+  `photo_restriction` is independently editable later, saved by
+  `ops/editregistration.php`'s `editChildForm` branch (lines 68–86), by
+  staff who have no visibility into whether this feature's consent was
+  already granted. Setting
   `photo_restriction='yes'` on a child who already has
   `face_match_consent='yes'` must run the same de-indexing steps as the
   disenrollment paths (De-indexing triggered from legacy PHP, in Indexing
@@ -422,6 +440,20 @@ the save can tell AI was involved.
   best-effort-calls the internal `deindex` endpoint) — otherwise a
   photo-restricted child stays face-matchable, which is the exact case
   this flag exists to prevent.
+- **Render-to-submit race**: revocation could delete a cached suggestion
+  between the teacher loading the tag page and submitting the form —
+  narrow (revocation and a specific teacher's save landing within the same
+  short window) but not impossible. The checkbox they see was already
+  rendered client-side; deleting the cache row server-side doesn't retract
+  it from their browser. `parent_update_tag_save.php`'s existing roster
+  validation (2026-08-03 spec) still applies — a submitted `cid` outside
+  the class roster is dropped — but a revoked child stays on their own
+  class roster, so that check doesn't catch this case. Accepted as-is: the
+  outcome is identical to a teacher confirming a correct manual tag a
+  second before a parent happens to revoke consent, which this spec
+  doesn't attempt to guard against either — tags are about what's true in
+  the photo, and consent revocation governs future matching, not the
+  historical accuracy of an already-confirmed tag.
 - **Stale reference photo** is an accepted, unmitigated limitation: if a
   child's registration photo is old, match quality degrades. The 80%
   threshold is the only defense; not solved further here.

@@ -215,30 +215,39 @@ backfill job:
   and `face_match_consent='yes'` can never disagree — a parent is never
   shown "consent on" for a child who isn't actually indexed and therefore
   will never be matched.
-- Consent flips to `'no'` → the column is set to `'no'` and the
-  `child_face_index` row deleted **immediately**, unconditionally. Calling
-  `DeleteFaces` to clean up the AWS-side vector is best-effort after that —
-  logged on failure, not retried, not blocking the response. This is safe
-  because suggestion generation (below) only ever trusts a match if it can
-  resolve the returned face id back to a `child_face_index` row; once that
-  row is gone, a lingering AWS-side vector can still be *found* by
-  `SearchFacesByImage` but can no longer produce a suggestion. Revocation
-  is therefore instantaneous from the product's perspective regardless of
-  AWS availability, at the cost of an occasional orphaned vector in AWS
-  that a future cleanup pass could sweep (not built here — see Out of
-  scope).
+- Consent flips to `'no'` → the column is set to `'no'`, the
+  `child_face_index` row deleted, **and every row for this `cid` deleted
+  from `parent_update_media_suggestion`**, all in the same immediate,
+  unconditional step. The `child_face_index` deletion alone stops *future*
+  matches (suggestion generation resolves every result through that table
+  — see step 3 below), but it does nothing about a suggestion that was
+  already generated and cached for a not-yet-reviewed update before
+  revocation: that row would otherwise keep rendering pre-checked,
+  contradicting "no consent means invisible to this feature entirely"
+  above. Deleting it here is what actually makes revocation immediate,
+  not just future-matches-only. Calling `DeleteFaces` to clean up the
+  AWS-side vector is best-effort after all of that — logged on failure,
+  not retried, not blocking the response — since the MySQL-side deletions
+  are already sufficient to make the child unmatchable and unsuggested; a
+  lingering AWS-side vector can still be *found* by `SearchFacesByImage`
+  but can no longer produce anything either component of this feature will
+  show anyone (see Out of scope for the orphaned-vector cleanup this
+  leaves unbuilt).
 
 **De-indexing triggered from legacy PHP.** Two guardrails below —
 disenrollment and `photo_restriction` — need to de-index a child from code
 that lives in `admin`/`ops`/`inc`, not `parent-app-api`. Per System
 boundary, legacy PHP has no AWS credentials, so it can't call `DeleteFaces`
 itself, but it *can* do the MySQL-side half directly (same DB it already
-writes to): look up the child's `child_face_index` row (a no-op if none
-exists — the child never consented), delete it, and set
-`child.face_match_consent='no'`. That MySQL-side deletion alone is enough
-to stop the child from ever surfacing as a suggestion again — exactly the
-same "resolve face id back through `child_face_index`" mechanism the
-parent-app-triggered revoke path relies on above. Cleaning up the AWS-side
+writes to) — the same three deletions as the parent-app-triggered path
+above, not just one of them: look up the child's `child_face_index` row (a
+no-op if none exists — the child never consented), delete it, delete every
+row for this `cid` from `parent_update_media_suggestion`, and set
+`child.face_match_consent='no'`. Skipping the suggestion-table deletion
+here would reopen the same gap the parent-app path closes above — an
+already-cached, not-yet-reviewed suggestion for this child would keep
+rendering regardless of which path triggered the revocation. Cleaning up
+the AWS-side
 vector is then a second, best-effort step: a new internal endpoint,
 `POST /api/internal/faces/deindex` (`X-Api-Key`-gated, same pattern as
 `/api/internal/updates/{id}/suggestions`, body: `school` string +

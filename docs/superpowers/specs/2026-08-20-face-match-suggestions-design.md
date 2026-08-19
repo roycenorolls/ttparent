@@ -80,14 +80,18 @@ New table mapping a consenting child to their AWS-side face vector:
 CREATE TABLE IF NOT EXISTS child_face_index (
   id                  INT AUTO_INCREMENT PRIMARY KEY,
   cid                 INT NOT NULL,
-  collection_id       VARCHAR(64) NOT NULL,
   rekognition_face_id VARCHAR(64) NOT NULL,
   indexed_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uq_cid (cid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
-One row per consenting child. AWS Rekognition Face Collections store a
+No `collection_id` column — this table lives inside one school's own
+database, and every row in it belongs to that school's single collection
+(`school_key`) by construction, so storing the value on every row would
+just be a lookup-free repeat of something already implied by which
+database the row is in. One row per consenting child. AWS Rekognition Face
+Collections store a
 mathematical vector derived from the photo, not the photo itself, once
 indexed — worth including in the parent-facing consent copy.
 
@@ -197,11 +201,14 @@ backfill job:
   so this is just avoiding a wasted AWS call. Otherwise, Laravel calls
   `IndexFaces` against that school's collection using the existing
   registration photo, stores the returned face id in `child_face_index`,
-  **then** persists `face_match_consent='yes'`. If `IndexFaces` throws (AWS
-  timeout, throttling, or a missing/unusable registration photo —
-  `getphoto.php` never 404s, it returns HTTP 200 with a `notavailable.jpg`
-  placeholder for a child with no photo on file, which Rekognition itself
-  rejects as faceless), the endpoint returns an error to the
+  **then** persists `face_match_consent='yes'`. Two failure shapes are
+  treated identically: `IndexFaces` throwing (AWS timeout, throttling), and
+  `IndexFaces` succeeding with an **empty `FaceRecords` array** — it does
+  not throw when it detects zero faces in the image, it returns HTTP 200
+  with nothing indexed, which is exactly what happens for a child with no
+  usable registration photo (`getphoto.php` never 404s either; a missing
+  photo is HTTP 200 with a `notavailable.jpg` placeholder, a faceless
+  image). Either case, the endpoint returns an error to the
   parent-app toggle (it visibly fails to turn on, with a "couldn't process
   photo, try again" message) and `face_match_consent` stays `'no'`. This
   ordering is deliberate: it's the only way to guarantee `child_face_index`
@@ -221,17 +228,37 @@ backfill job:
   that a future cleanup pass could sweep (not built here — see Out of
   scope).
 
+**De-indexing triggered from legacy PHP.** Two guardrails below —
+disenrollment and `photo_restriction` — need to de-index a child from code
+that lives in `admin`/`ops`/`inc`, not `parent-app-api`. Per System
+boundary, legacy PHP has no AWS credentials, so it can't call `DeleteFaces`
+itself, but it *can* do the MySQL-side half directly (same DB it already
+writes to): look up the child's `child_face_index` row (a no-op if none
+exists — the child never consented), delete it, and set
+`child.face_match_consent='no'`. That MySQL-side deletion alone is enough
+to stop the child from ever surfacing as a suggestion again — exactly the
+same "resolve face id back through `child_face_index`" mechanism the
+parent-app-triggered revoke path relies on above. Cleaning up the AWS-side
+vector is then a second, best-effort step: a new internal endpoint,
+`POST /api/internal/faces/deindex` (`X-Api-Key`-gated, same pattern as
+`/api/internal/updates/{id}/suggestions`, body: `school` string +
+`rekognition_face_id`), which just calls `DeleteFaces` and logs-not-retries
+on failure. Legacy PHP fires this call after its own MySQL deletion
+succeeds, on a short timeout, and doesn't block on or fail its own request
+if the call errors or times out — identical risk profile to the
+parent-app-triggered path's "occasional orphaned AWS vector" tradeoff.
+
 **Disenrollment** isn't a consent action but has the same effect and is
 easy to miss: wherever a child's enrollment is withdrawn (`child.status`
-flipping to `'disabled'`) should also de-index, the same as an explicit
-consent-off. This has **two** call sites, not one — `ops/inactive.php`
-handles an immediate-effective-date disenrollment, but a future-dated one
-is instead applied later by the daily cron subroutine in
-`inc/functions.php` (around line 667). Both paths must trigger the same
-de-index effect; hooking only the immediate path would leave every
-future-dated disenrollment's child searchable until someone notices.
-Otherwise a disenrolled child's face stays searchable indefinitely with no
-parent-facing toggle left to turn it off.
+flipping to `'disabled'`) should run the de-index steps above. This has
+**two** call sites, not one — `ops/inactive.php` handles an
+immediate-effective-date disenrollment, but a future-dated one is instead
+applied later by the daily cron subroutine in `inc/functions.php` (around
+line 667). Both paths must trigger the same de-index effect; hooking only
+the immediate path would leave every future-dated disenrollment's child
+searchable until someone notices. Otherwise a disenrolled child's face
+stays searchable indefinitely with no parent-facing toggle left to turn it
+off.
 
 ## Suggestion generation
 
@@ -355,10 +382,12 @@ the save can tell AI was involved.
   `admin/editregistration.php`, by staff who have no visibility into
   whether this feature's consent was already granted. Setting
   `photo_restriction='yes'` on a child who already has
-  `face_match_consent='yes'` must also flip consent to `'no'` and de-index
-  them (same effect as a parent revoking consent, or a disenrollment,
-  above) — otherwise a photo-restricted child stays face-matchable, which
-  is the exact case this flag exists to prevent.
+  `face_match_consent='yes'` must run the same de-indexing steps as the
+  disenrollment paths (De-indexing triggered from legacy PHP, in Indexing
+  pipeline above: legacy PHP does its own MySQL-side deletion, then
+  best-effort-calls the internal `deindex` endpoint) — otherwise a
+  photo-restricted child stays face-matchable, which is the exact case
+  this flag exists to prevent.
 - **Stale reference photo** is an accepted, unmitigated limitation: if a
   child's registration photo is old, match quality degrades. The 80%
   threshold is the only defense; not solved further here.

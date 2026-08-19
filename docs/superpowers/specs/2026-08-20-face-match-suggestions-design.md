@@ -270,18 +270,39 @@ suggestion — not synchronously during upload (`parent_update_save.php`
 stays exactly as fast as it is today) and not as a background job (this
 codebase has no queue infrastructure; adding one solely for this would be
 disproportionate to the workload — a handful of photos per post, opened at
-most a few times before it's reviewed). Because of the caching in step 5
+most a few times before it's reviewed). Because of the caching in step 6
 below, only the first such visit actually triggers AWS calls for a given
 photo — later pre-review visits find every media row already cached and
 skip calling the endpoint entirely — so "first visit" is the common case
 in practice even though the gate itself is `tags_reviewed_at`, not visit
 count.
 
+**Group photos need a face-by-face pass, not one call per photo.**
+`SearchFacesByImage` only detects and searches the single largest face in
+whatever image it's given — it is not a multi-face search, and this isn't
+configurable. A one-child close-up is fine with a single call, but the
+2026-08-03 spec's own running example is a 20-photo "Fun Friday" batch,
+and a class activity photo routinely has several children in frame. Calling
+`SearchFacesByImage` once per photo would silently produce a suggestion
+for only the most prominent child in every group shot, with no signal to
+the teacher that anyone else in the photo went unsuggested — a
+systematic gap for the common case, not an edge case.
+
 For each media row with no cached suggestion yet:
 
 1. Fetch the photo's bytes from its Cloudflare Images URL and call
-   `SearchFacesByImage` against the school's collection.
-2. **Resolve each returned `rekognition_face_id` back to a `cid` via
+   `DetectFaces` to get bounding boxes for every face AWS finds in the
+   photo (a group shot returns several; a solo photo returns one; zero
+   means no suggestions for this photo, same as today's "no match"
+   handling below).
+2. For each detected bounding box, crop that region out of the fetched
+   image (PHP GD, already available — no new dependency) and call
+   `SearchFacesByImage` with the cropped, single-face image against the
+   school's collection. This is one extra AWS call (`DetectFaces`) plus one
+   `SearchFacesByImage` per face rather than per photo — still negligible
+   at this volume (see cost, below), since a class photo rarely has more
+   than a handful of faces.
+3. **Resolve each returned `rekognition_face_id` back to a `cid` via
    `child_face_index`.** A result AWS returns for a face id with no
    matching row — because the child's consent was revoked (and the row
    deleted) after indexing but before this search — is discarded here,
@@ -289,15 +310,19 @@ For each media row with no cached suggestion yet:
    pipeline section's revocation guarantee depends on; without this step
    as an explicit part of generation, a revoked child could still surface
    as a suggestion off a lingering AWS-side vector.
-3. Filter the resolved `cid`s to the update's class roster — a match for a
+4. Filter the resolved `cid`s to the update's class roster — a match for a
    child not enrolled in this class is discarded even if AWS returns it;
    cross-class matches are noise, not signal.
-4. Keep only matches at **≥80% confidence**. Per the original spec's
+5. Keep only matches at **≥80% confidence**. Per the original spec's
    caution about accuracy on young children, under-suggesting is the safer
    failure mode than over-suggesting.
-5. Cache accepted matches in a new table so a later pre-review visit, or a
+6. Cache accepted matches in a new table so a later pre-review visit, or a
    second teacher opening the same page, never re-calls AWS for media
-   already processed.
+   already processed. The insert is `INSERT ... ON DUPLICATE KEY UPDATE
+   confidence = VALUES(confidence)` against `uq_media_child` — two
+   different detected faces in the same photo both resolving to the same
+   `cid` (a plausible model error, not just a theoretical one) must not
+   throw a duplicate-key error and abort the rest of the photo's matches.
 
 If `SearchFacesByImage` throws for a given photo (AWS timeout, throttling,
 transient error), `SuggestionController::generate` catches it per-photo and
@@ -392,8 +417,10 @@ the save can tell AI was involved.
   child's registration photo is old, match quality degrades. The 80%
   threshold is the only defense; not solved further here.
 - **Cost is negligible** at this scale — Rekognition bills per image
-  processed (roughly $0.001–0.01/image); a school posting dozens of photos
-  a day is a rounding error.
+  processed (roughly $0.001–0.01/image), and the per-face pass means a
+  group photo costs one `DetectFaces` call plus one `SearchFacesByImage`
+  call per face rather than one call flat; a school posting dozens of
+  photos a day, each with a handful of faces, is still a rounding error.
 
 ## Out of scope
 

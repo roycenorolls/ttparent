@@ -31,6 +31,13 @@
 -- ============================================================
 -- TutorTime Parent App — Face-match suggestion schema
 -- Run against each school DB (kemang, pi, bukit, pluit, etc.)
+--
+-- InnoDB/utf8mb4/plain INT here, not the main app's MyISAM/latin1/INT
+-- UNSIGNED convention — this matches parent_updates_schema.sql's existing
+-- tables (parent_updates, parent_update_media), the parent app's own
+-- established pattern in this shared DB, and InnoDB is required here
+-- specifically because the consent-flip endpoint wraps its writes in a
+-- real transaction, which MyISAM doesn't support.
 -- ============================================================
 
 -- Per-child opt-in to biometric face matching. Separate from, and gated
@@ -440,7 +447,11 @@ class SuggestionController extends Controller
         $media = $conn->table('parent_update_media')
             ->where('update_id', $updateId)
             ->where('status', 'active')
-            ->whereIn('file_type', ['image/jpeg', 'image/png', 'image/jpg'])
+            // A prefix match, not a fixed whitelist — uploads can carry any
+            // image/* MIME the browser reports (image/heic from iPhones,
+            // image/webp, etc.), and this only needs to exclude video/pdf,
+            // which have no face-searchable frame.
+            ->where('file_type', 'like', 'image/%')
             ->get();
 
         $alreadyCached = $conn->table('parent_update_media_suggestion')
@@ -671,21 +682,28 @@ Add this method to `ParentController`, after `childProfile()`:
         }
 
         if ($consent === 'no') {
-            DB::connection($conn)->transaction(function () use ($conn, $id) {
-                $existing = DB::connection($conn)->table('child_face_index')->where('cid', $id)->first();
+            // Read before the transaction, not inside it — the AWS cleanup
+            // call below must run strictly *after* the local deletes commit,
+            // not nested inside the same transaction. The spec frames these
+            // as two separate steps (local deletes are "immediate and
+            // unconditional," the AWS call is "best-effort after all of
+            // that") precisely so a hang/crash during the network call can
+            // never roll back state that's supposed to already be final.
+            $existing = DB::connection($conn)->table('child_face_index')->where('cid', $id)->first();
 
+            DB::connection($conn)->transaction(function () use ($conn, $id) {
                 DB::connection($conn)->table('child_face_index')->where('cid', $id)->delete();
                 DB::connection($conn)->table('parent_update_media_suggestion')->where('cid', $id)->delete();
                 DB::connection($conn)->table('child')->where('cid', $id)->update(['face_match_consent' => 'no']);
-
-                if ($existing) {
-                    try {
-                        app(RekognitionService::class)->deleteFace($conn, $existing->rekognition_face_id);
-                    } catch (\Throwable $e) {
-                        Log::warning('Consent revoke: DeleteFaces failed', ['cid' => $id, 'error' => $e->getMessage()]);
-                    }
-                }
             });
+
+            if ($existing) {
+                try {
+                    $rekognition->deleteFace($conn, $existing->rekognition_face_id);
+                } catch (\Throwable $e) {
+                    Log::warning('Consent revoke: DeleteFaces failed', ['cid' => $id, 'error' => $e->getMessage()]);
+                }
+            }
 
             return response()->json(['ok' => true, 'face_match_consent' => 'no']);
         }

@@ -41,10 +41,6 @@
 -- real transaction, which MyISAM doesn't support.
 -- ============================================================
 
--- Per-child opt-in to biometric face matching. Separate from, and gated
--- by, the pre-existing child.photo_restriction column.
-ALTER TABLE child ADD COLUMN IF NOT EXISTS face_match_consent ENUM('no','yes') NOT NULL DEFAULT 'no';
-
 -- Maps a consenting child to their AWS Rekognition face vector. One row
 -- per consenting child; deleted the moment consent is revoked.
 CREATE TABLE IF NOT EXISTS child_face_index (
@@ -54,11 +50,6 @@ CREATE TABLE IF NOT EXISTS child_face_index (
   indexed_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uq_cid (cid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Tracks whether a teacher has been through the tag-review screen for an
--- update at least once — the gate that stops a rejected AI suggestion
--- from silently re-appearing on a later visit.
-ALTER TABLE parent_updates ADD COLUMN IF NOT EXISTS tags_reviewed_at TIMESTAMP NULL DEFAULT NULL;
 
 -- Cached AI-generated suggestions, pre-filtered to class roster + 80%
 -- confidence. A row here means "AWS thinks this child is in this photo,
@@ -71,6 +62,40 @@ CREATE TABLE IF NOT EXISTS parent_update_media_suggestion (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uq_media_child (media_id, cid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Add face_match_consent to child (per-child opt-in to biometric face
+-- matching, separate from and gated by the pre-existing photo_restriction
+-- column) and tags_reviewed_at to parent_updates (tracks whether a
+-- teacher has been through the tag-review screen at least once — the gate
+-- that stops a rejected AI suggestion from silently re-appearing).
+--
+-- ALTER TABLE ... ADD COLUMN IF NOT EXISTS is MariaDB-only syntax —
+-- production runs MariaDB (confirmed elsewhere in this project's own
+-- notes), but plain MySQL 8.x rejects it outright, which would break
+-- local dev on a vanilla-MySQL WAMP install. Wrapped in the same
+-- information_schema-guarded procedure pattern parent_updates_schema.sql
+-- already uses for its own idempotent column adds (see
+-- _tt_add_geo_columns there) — portable to both engines.
+DROP PROCEDURE IF EXISTS _tt_add_face_match_columns;
+DELIMITER //
+CREATE PROCEDURE _tt_add_face_match_columns()
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = DATABASE() AND table_name = 'child' AND column_name = 'face_match_consent'
+  ) THEN
+    ALTER TABLE child ADD COLUMN face_match_consent ENUM('no','yes') NOT NULL DEFAULT 'no';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = DATABASE() AND table_name = 'parent_updates' AND column_name = 'tags_reviewed_at'
+  ) THEN
+    ALTER TABLE parent_updates ADD COLUMN tags_reviewed_at TIMESTAMP NULL DEFAULT NULL;
+  END IF;
+END //
+DELIMITER ;
+CALL _tt_add_face_match_columns();
+DROP PROCEDURE IF EXISTS _tt_add_face_match_columns;
 ```
 
 - [ ] **Step 2: Run it against a local school DB and confirm**

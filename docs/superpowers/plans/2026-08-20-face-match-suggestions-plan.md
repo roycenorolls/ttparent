@@ -1175,6 +1175,14 @@ function callInternalApi($path, array $body, $timeoutSeconds = 5) {
     ]);
     curl_exec($ch);
     $ok = curl_errno($ch) === 0;
+    // Matches inc/R2Uploader.php's error_log() on its own best-effort
+    // external calls — without this, a mismatched PARENT_API_INTERNAL_KEY
+    // (a 401 the transport layer doesn't see as an error) is invisible
+    // anywhere, exactly the debugging trap this plan's own verification
+    // notes call out.
+    if (!$ok) {
+        error_log('callInternalApi failed: ' . curl_error($ch) . " ($path)");
+    }
     curl_close($ch);
     return $ok;
 }

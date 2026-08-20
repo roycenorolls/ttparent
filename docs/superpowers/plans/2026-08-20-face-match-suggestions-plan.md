@@ -504,6 +504,20 @@ class SuggestionController extends Controller
             ->unique()
             ->all();
 
+        // Known, accepted tradeoff: this marks a whole photo "done" once
+        // ANY face in it has a cached suggestion, not once every detected
+        // face has been attempted. A group photo where one face matches
+        // and a second hits a transient SearchFacesByImage error (network
+        // blip, throttling) will never retry that second face on a later
+        // pre-review visit — the photo already "has a row." Not solved
+        // here: doing so would need a per-photo "fully attempted" marker
+        // independent of "has a suggestion," which is more state than this
+        // cache table is designed to hold, for a narrow failure mode
+        // (transient AWS/network errors) whose downside is fully bounded
+        // by the manual tagging flow underneath this feature always
+        // remaining available as a fallback — a teacher missing one AI
+        // suggestion can still tag that child by hand.
+
         $collectionId = $school;
 
         foreach ($media as $item) {
@@ -533,35 +547,43 @@ class SuggestionController extends Controller
                 try {
                     $cropped = ImageCropper::crop($bytes, $box);
                     $match   = $rekognition->searchFace($collectionId, $cropped, 80.0);
+
+                    if (!$match) {
+                        continue;
+                    }
+
+                    $cid = $conn->table('child_face_index')
+                        ->where('rekognition_face_id', $match['face_id'])
+                        ->value('cid');
+
+                    // No row = consent was revoked since indexing, or a
+                    // stray face id — never surface it as a suggestion.
+                    if (!$cid) {
+                        continue;
+                    }
+                    if (!in_array($cid, $roster, true)) {
+                        continue;
+                    }
+
+                    $conn->table('parent_update_media_suggestion')->upsert(
+                        [['media_id' => $item->id, 'cid' => $cid, 'confidence' => $match['confidence']]],
+                        ['media_id', 'cid'],
+                        ['confidence']
+                    );
                 } catch (\Throwable $e) {
-                    Log::warning('Suggestion generation: SearchFacesByImage failed', [
+                    // Covers SearchFacesByImage, the child_face_index
+                    // lookup, and the upsert itself — not just the AWS
+                    // call. A transient DB error (a deadlock on
+                    // uq_media_child under a concurrent request for the
+                    // same update, a dropped connection) should cost this
+                    // one face, not abort every remaining face/photo in
+                    // the batch, matching how every other failure mode in
+                    // this method already degrades.
+                    Log::warning('Suggestion generation: face processing failed', [
                         'media_id' => $item->id, 'error' => $e->getMessage(),
                     ]);
                     continue;
                 }
-
-                if (!$match) {
-                    continue;
-                }
-
-                $cid = $conn->table('child_face_index')
-                    ->where('rekognition_face_id', $match['face_id'])
-                    ->value('cid');
-
-                // No row = consent was revoked since indexing, or a stray
-                // face id — never surface it as a suggestion.
-                if (!$cid) {
-                    continue;
-                }
-                if (!in_array($cid, $roster, true)) {
-                    continue;
-                }
-
-                $conn->table('parent_update_media_suggestion')->upsert(
-                    [['media_id' => $item->id, 'cid' => $cid, 'confidence' => $match['confidence']]],
-                    ['media_id', 'cid'],
-                    ['confidence']
-                );
             }
         }
 

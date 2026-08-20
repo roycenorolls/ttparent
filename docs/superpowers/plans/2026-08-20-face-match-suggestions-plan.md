@@ -722,12 +722,15 @@ git commit -m "Wire internal suggestion-generation and deindex routes"
 At the top of the file, alongside the existing `use` statements:
 ```php
 use App\Services\RekognitionService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 ```
 
 **Why the registration photo is read from disk, not fetched over HTTP:** the spec assumed `ops/getphoto.php?cid={id}` was a plain unauthenticated URL Laravel could `Http::get()`. It isn't — `config/config.php:58-72` resolves the school database from `$_SESSION['scid']`, and with no session (`$GLOBALS['dbname']` empty) it redirects to `admin/school_select.php` instead of serving the photo. A stateless server-to-server call from Laravel never carries that session, so every fetch would silently return the redirect page's HTML instead of a photo, and `IndexFaces` would fail every time. Fixed by reading the file directly: `parent-app-api/config/database.php`'s own comment already establishes that `dirname(base_path(), 2)` reaches `secrets.php` one level above the main app's document root in both local and production layouts — meaning `parent-app-api` is nested *inside* the main app's web root, so `dirname(base_path(), 1)` is exactly `$GLOBALS['dir']` in the legacy app, and the registration photo (stored by `ops/editregistration.php`'s `editChildForm` upload handler at `uploads/{school_key}/childphotos/{cid}`, no extension) is a plain file Laravel can read with no network call and no session at all.
 
 **On the transaction's real guarantee (flagged during Task 1's code review):** the `'yes'` branch below wraps `child_face_index` (InnoDB) and `child.face_match_consent` (MyISAM, unchanged — see Task 1's schema header comment) in one `DB::transaction()`. Only the InnoDB write actually gets rollback protection; a MyISAM write inside a transaction commits immediately regardless of the transaction's outcome. In practice this residual gap is narrow: the `child` update is the *last* statement in the closure, so the only way to reach the bad state (consent says 'yes' but `child_face_index` has no row) is for every prior step to succeed and then the transaction's own final `COMMIT` to fail — a rare connection-loss-at-exactly-that-moment case, not the common failure mode (AWS timeouts, a faceless photo) this transaction was actually built to guard against, both of which throw *before* the `child` update line is ever reached and correctly prevent it from running at all. Not solved here — `child` staying MyISAM is an established, unrelated project convention, not something this task should change — just documented so it isn't mistaken for full atomicity.
+
+**On the two fixes below (flagged during Task 8's own code review):** the whole method now runs inside a per-child `Cache::lock()`, and the grant path's final `child` update re-checks `photo_restriction` in its own `WHERE` clause. Both close real races: without the lock, a revoke and a grant racing for the same child could complete in either order regardless of which the parent actually tapped last — e.g. tap revoke, then immediately re-tap grant by mistake, and if the slower request (whichever one happens to be doing the ~1s+ AWS round-trip) finishes last, it silently overwrites the other's outcome. Without the `WHERE photo_restriction != 'yes'` re-check, a staff member could flip `photo_restriction` to `'yes'` in the admin app *while* this request's AWS call is in flight, and the transaction would still complete and consent a now-restricted child — the exact case the upfront check exists to prevent, just with the window narrowed from "the whole request" down to "the initial `photo_restriction` read only," not eliminated at read time. Confirm the app's cache driver actually supports atomic locks (Laravel's default `database`/`file`/`redis`/`array`/`memcached` drivers all do; check `config('cache.default')` if unsure) before relying on `Cache::lock()`.
 
 - [ ] **Step 2: Add the method**
 
@@ -737,7 +740,8 @@ Add this method to `ParentController`, after `childProfile()`:
     /**
      * Parent self-service toggle for face-match consent. See "Consent &
      * data model" and "Indexing pipeline" in the face-match suggestions
-     * spec for why the 'yes' path runs inside one DB transaction.
+     * spec for why the 'yes' path runs inside one DB transaction, and the
+     * note above for why the whole method runs inside a per-child lock.
      */
     public function setFaceMatchConsent(Request $request, int $id, RekognitionService $rekognition)
     {
@@ -752,76 +756,93 @@ Add this method to `ParentController`, after `childProfile()`:
             return response()->json(['message' => 'Not found.'], 404);
         }
 
-        if ($consent === 'no') {
-            // Read before the transaction, not inside it — the AWS cleanup
-            // call below must run strictly *after* the local deletes commit,
-            // not nested inside the same transaction. The spec frames these
-            // as two separate steps (local deletes are "immediate and
-            // unconditional," the AWS call is "best-effort after all of
-            // that") precisely so a hang/crash during the network call can
-            // never roll back state that's supposed to already be final.
-            $existing = DB::connection($conn)->table('child_face_index')->where('cid', $id)->first();
-
-            DB::connection($conn)->transaction(function () use ($conn, $id) {
-                DB::connection($conn)->table('child_face_index')->where('cid', $id)->delete();
-                DB::connection($conn)->table('parent_update_media_suggestion')->where('cid', $id)->delete();
-                DB::connection($conn)->table('child')->where('cid', $id)->update(['face_match_consent' => 'no']);
-            });
-
-            if ($existing) {
-                try {
-                    $rekognition->deleteFace($conn, $existing->rekognition_face_id);
-                } catch (\Throwable $e) {
-                    Log::warning('Consent revoke: DeleteFaces failed', ['cid' => $id, 'error' => $e->getMessage()]);
-                }
-            }
-
-            return response()->json(['ok' => true, 'face_match_consent' => 'no']);
-        }
-
-        // consent === 'yes'
-        if ($child->photo_restriction === 'yes') {
-            return response()->json([
-                'message' => "This child has a photo restriction on file and can't be enabled for face matching.",
-            ], 422);
-        }
-
-        try {
-            DB::connection($conn)->transaction(function () use ($conn, $id, $rekognition) {
+        return Cache::lock("face-match-consent:{$conn}:{$id}", 10)->block(5, function () use ($conn, $id, $consent, $child, $rekognition) {
+            if ($consent === 'no') {
+                // Read before the transaction, not inside it — the AWS
+                // cleanup call below must run strictly *after* the local
+                // deletes commit, not nested inside the same transaction.
+                // The spec frames these as two separate steps (local
+                // deletes are "immediate and unconditional," the AWS call
+                // is "best-effort after all of that") precisely so a
+                // hang/crash during the network call can never roll back
+                // state that's supposed to already be final.
                 $existing = DB::connection($conn)->table('child_face_index')->where('cid', $id)->first();
 
-                if (!$existing) {
-                    // The registration photo lives on disk, not behind a
-                    // URL Laravel can actually fetch — see Task 8 Step 1's
-                    // note on why this reads the file directly instead.
-                    $photoPath = dirname(base_path(), 1) . "/uploads/{$conn}/childphotos/{$id}";
-                    if (!is_file($photoPath)) {
-                        throw new \RuntimeException('no_registration_photo');
-                    }
-                    $bytes  = file_get_contents($photoPath);
-                    $faceId = $rekognition->indexFace($conn, $bytes, (string) $id);
+                DB::connection($conn)->transaction(function () use ($conn, $id) {
+                    DB::connection($conn)->table('child_face_index')->where('cid', $id)->delete();
+                    DB::connection($conn)->table('parent_update_media_suggestion')->where('cid', $id)->delete();
+                    DB::connection($conn)->table('child')->where('cid', $id)->update(['face_match_consent' => 'no']);
+                });
 
-                    if (!$faceId) {
-                        throw new \RuntimeException('no_face_detected');
+                if ($existing) {
+                    try {
+                        $rekognition->deleteFace($conn, $existing->rekognition_face_id);
+                    } catch (\Throwable $e) {
+                        Log::warning('Consent revoke: DeleteFaces failed', ['cid' => $id, 'error' => $e->getMessage()]);
                     }
-
-                    DB::connection($conn)->table('child_face_index')->insert([
-                        'cid' => $id, 'rekognition_face_id' => $faceId, 'indexed_at' => now(),
-                    ]);
                 }
 
-                DB::connection($conn)->table('child')->where('cid', $id)->update(['face_match_consent' => 'yes']);
-            });
-        } catch (\Throwable $e) {
-            Log::warning('Consent grant failed', ['cid' => $id, 'error' => $e->getMessage()]);
-            return response()->json(['message' => "Couldn't process photo, try again."], 422);
-        }
+                return response()->json(['ok' => true, 'face_match_consent' => 'no']);
+            }
 
-        return response()->json(['ok' => true, 'face_match_consent' => 'yes']);
+            // consent === 'yes'
+            if ($child->photo_restriction === 'yes') {
+                return response()->json([
+                    'message' => "This child has a photo restriction on file and can't be enabled for face matching.",
+                ], 422);
+            }
+
+            try {
+                DB::connection($conn)->transaction(function () use ($conn, $id, $rekognition) {
+                    $existing = DB::connection($conn)->table('child_face_index')->where('cid', $id)->first();
+
+                    if (!$existing) {
+                        // The registration photo lives on disk, not behind
+                        // a URL Laravel can actually fetch — see Task 8
+                        // Step 1's note on why this reads the file
+                        // directly instead.
+                        $photoPath = dirname(base_path(), 1) . "/uploads/{$conn}/childphotos/{$id}";
+                        if (!is_file($photoPath)) {
+                            throw new \RuntimeException('no_registration_photo');
+                        }
+                        $bytes  = file_get_contents($photoPath);
+                        $faceId = $rekognition->indexFace($conn, $bytes, (string) $id);
+
+                        if (!$faceId) {
+                            throw new \RuntimeException('no_face_detected');
+                        }
+
+                        DB::connection($conn)->table('child_face_index')->insert([
+                            'cid' => $id, 'rekognition_face_id' => $faceId, 'indexed_at' => now(),
+                        ]);
+                    }
+
+                    // Re-checked here, not just in the earlier read above —
+                    // narrows the window where a photo_restriction flip
+                    // during the AWS round-trip above could otherwise
+                    // still consent a now-restricted child. 0 affected
+                    // rows means exactly that happened; treated as a
+                    // failure the same way a missing/faceless photo is.
+                    $updated = DB::connection($conn)->table('child')
+                        ->where('cid', $id)
+                        ->where('photo_restriction', '!=', 'yes')
+                        ->update(['face_match_consent' => 'yes']);
+
+                    if (!$updated) {
+                        throw new \RuntimeException('photo_restriction_changed');
+                    }
+                });
+            } catch (\Throwable $e) {
+                Log::warning('Consent grant failed', ['cid' => $id, 'error' => $e->getMessage()]);
+                return response()->json(['message' => "Couldn't process photo, try again."], 422);
+            }
+
+            return response()->json(['ok' => true, 'face_match_consent' => 'yes']);
+        });
     }
 ```
 
-**Known limitation, not fixed here:** `$GLOBALS['allowed_photo_ext']` in `config/config.php` accepts GIF for registration photos, but Rekognition only supports JPEG/PNG — a child with a GIF registration photo would get "couldn't process photo, try again" from `IndexFaces` throwing, and retrying would never help (the message implies a transient failure, but this one isn't). Rare in practice and not addressed in this plan; if it comes up, the fix belongs in `RekognitionService::indexFace()` (convert non-JPEG/PNG input before indexing), not in this endpoint.
+**Known limitation, not fixed here:** `$GLOBALS['allowed_photo_ext']` in `config/config.php` accepts GIF for registration photos, but Rekognition only supports JPEG/PNG — a child with a GIF registration photo would get "couldn't process photo, try again" from `IndexFaces` throwing, and retrying would never help (the message implies a transient failure, but this one isn't). Rare in practice and not addressed in this plan; if it comes up, the fix belongs in `RekognitionService::indexFace()` (convert non-JPEG/PNG input before indexing), not in this endpoint. The same imprecise-message caveat now also applies to the `photo_restriction_changed` race above — an even rarer case, not worth a distinct message for.
 
 - [ ] **Step 3: Add the route**
 

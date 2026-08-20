@@ -382,6 +382,11 @@ class ImageCropper
         $w = (int) min($w, $imgW - $x);
         $h = (int) min($h, $imgH - $y);
 
+        if ($w <= 0 || $h <= 0) {
+            imagedestroy($img);
+            throw new \RuntimeException('imagecrop() failed.');
+        }
+
         $cropped = imagecrop($img, ['x' => $x, 'y' => $y, 'width' => $w, 'height' => $h]);
         imagedestroy($img);
 

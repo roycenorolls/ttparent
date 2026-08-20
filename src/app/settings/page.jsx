@@ -4,7 +4,10 @@ import { api } from '@/lib/api';
 
 export default function SettingsPage() {
   const [children, setChildren] = useState(null);
-  const [pending,  setPending]  = useState(null); // id currently being toggled
+  const [pending,  setPending]  = useState({}); // { [childId]: true } — a set, not a scalar,
+                                                 // so toggling one child's request in flight
+                                                 // doesn't get cleared by a different child's
+                                                 // request resolving first.
   const [error,    setError]    = useState(null);
 
   useEffect(() => {
@@ -13,7 +16,7 @@ export default function SettingsPage() {
 
   async function toggle(child) {
     const next = child.face_match_consent === 'yes' ? 'no' : 'yes';
-    setPending(child.id);
+    setPending(p => ({ ...p, [child.id]: true }));
     setError(null);
     try {
       await api.setFaceMatchConsent(child.id, next);
@@ -21,7 +24,10 @@ export default function SettingsPage() {
     } catch {
       setError(`Couldn't update ${child.firstname}'s setting — please try again.`);
     } finally {
-      setPending(null);
+      setPending(p => {
+        const { [child.id]: _, ...rest } = p;
+        return rest;
+      });
     }
   }
 
@@ -68,12 +74,12 @@ export default function SettingsPage() {
               </div>
               <button
                 onClick={() => !restricted && toggle(child)}
-                disabled={restricted || pending === child.id}
+                disabled={restricted || !!pending[child.id]}
                 style={{
                   width: 44, height: 26, borderRadius: 13, border: 'none', flexShrink: 0,
                   background: restricted ? 'var(--tt-border)' : (on ? 'var(--tt-blue)' : 'var(--tt-border)'),
                   position: 'relative', cursor: restricted ? 'default' : 'pointer',
-                  opacity: pending === child.id ? 0.6 : 1,
+                  opacity: pending[child.id] ? 0.6 : 1,
                 }}
                 aria-label={`Face-match consent for ${child.firstname}`}
               >

@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { api } from '@/lib/api';
 import { getDistanceKm } from '@/lib/haversine';
 import MembershipCard from '@/components/MembershipCard';
@@ -58,6 +59,12 @@ export default function CardPage() {
           <span style={{ fontSize: 11 }}>Show your QR at checkout. Discount applies once scanned.</span>
         </div>
       )}
+
+      <div style={{ padding: '16px 16px 0' }}>
+        <Link href="/settings" style={{ fontSize: 12, color: 'var(--tt-blue)', textDecoration: 'none' }}>
+          Privacy settings →
+        </Link>
+      </div>
     </div>
   );
 }

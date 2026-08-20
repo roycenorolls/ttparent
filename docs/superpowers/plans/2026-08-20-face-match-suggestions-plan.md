@@ -34,11 +34,17 @@
 -- Run against each school DB (kemang, pi, bukit, pluit, etc.)
 --
 -- InnoDB/utf8mb4/plain INT here, not the main app's MyISAM/latin1/INT
--- UNSIGNED convention — this matches parent_updates_schema.sql's existing
+-- UNSIGNED convention — matches parent_updates_schema.sql's existing
 -- tables (parent_updates, parent_update_media), the parent app's own
--- established pattern in this shared DB, and InnoDB is required here
--- specifically because the consent-flip endpoint wraps its writes in a
--- real transaction, which MyISAM doesn't support.
+-- established pattern in this shared DB. InnoDB is needed for these two
+-- tables specifically because the consent-flip endpoint (Task 8) wraps
+-- writes to them in a real transaction. That transaction is NOT fully
+-- atomic end-to-end, though: it also updates `child.face_match_consent`,
+-- and `child` stays MyISAM (per this project's core-table convention,
+-- unchanged here) — a MyISAM write inside a transaction commits
+-- immediately regardless of the transaction's own outcome, so only the
+-- two new InnoDB tables actually get rollback protection. See Task 8's
+-- note on why this residual gap is accepted rather than solved.
 -- ============================================================
 
 -- Maps a consenting child to their AWS Rekognition face vector. One row
@@ -48,7 +54,8 @@ CREATE TABLE IF NOT EXISTS child_face_index (
   cid                 INT NOT NULL,
   rekognition_face_id VARCHAR(64) NOT NULL,
   indexed_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_cid (cid)
+  UNIQUE KEY uq_cid (cid),
+  KEY idx_rekognition_face_id (rekognition_face_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Cached AI-generated suggestions, pre-filtered to class roster + 80%
@@ -86,7 +93,17 @@ BEGIN
   ) THEN
     ALTER TABLE child ADD COLUMN face_match_consent ENUM('no','yes') NOT NULL DEFAULT 'no';
   END IF;
-  IF NOT EXISTS (
+  -- parent_updates is guarded on table existence too, not just the column
+  -- — unlike `child`, it isn't guaranteed to exist on every school DB yet
+  -- (added by the 2026-08-03 tagging feature, not a core table), so a
+  -- school that hasn't run parent_updates_schema.sql would otherwise hit
+  -- "table doesn't exist" here, aborting after the two CREATE TABLEs above
+  -- already succeeded. Mirrors the same guard membership_benefits gets in
+  -- _tt_add_geo_columns, one level down (table existence, then column).
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = DATABASE() AND table_name = 'parent_updates'
+  ) AND NOT EXISTS (
     SELECT 1 FROM information_schema.columns
     WHERE table_schema = DATABASE() AND table_name = 'parent_updates' AND column_name = 'tags_reviewed_at'
   ) THEN
@@ -682,6 +699,8 @@ use Illuminate\Support\Facades\Log;
 ```
 
 **Why the registration photo is read from disk, not fetched over HTTP:** the spec assumed `ops/getphoto.php?cid={id}` was a plain unauthenticated URL Laravel could `Http::get()`. It isn't — `config/config.php:58-72` resolves the school database from `$_SESSION['scid']`, and with no session (`$GLOBALS['dbname']` empty) it redirects to `admin/school_select.php` instead of serving the photo. A stateless server-to-server call from Laravel never carries that session, so every fetch would silently return the redirect page's HTML instead of a photo, and `IndexFaces` would fail every time. Fixed by reading the file directly: `parent-app-api/config/database.php`'s own comment already establishes that `dirname(base_path(), 2)` reaches `secrets.php` one level above the main app's document root in both local and production layouts — meaning `parent-app-api` is nested *inside* the main app's web root, so `dirname(base_path(), 1)` is exactly `$GLOBALS['dir']` in the legacy app, and the registration photo (stored by `ops/editregistration.php`'s `editChildForm` upload handler at `uploads/{school_key}/childphotos/{cid}`, no extension) is a plain file Laravel can read with no network call and no session at all.
+
+**On the transaction's real guarantee (flagged during Task 1's code review):** the `'yes'` branch below wraps `child_face_index` (InnoDB) and `child.face_match_consent` (MyISAM, unchanged — see Task 1's schema header comment) in one `DB::transaction()`. Only the InnoDB write actually gets rollback protection; a MyISAM write inside a transaction commits immediately regardless of the transaction's outcome. In practice this residual gap is narrow: the `child` update is the *last* statement in the closure, so the only way to reach the bad state (consent says 'yes' but `child_face_index` has no row) is for every prior step to succeed and then the transaction's own final `COMMIT` to fail — a rare connection-loss-at-exactly-that-moment case, not the common failure mode (AWS timeouts, a faceless photo) this transaction was actually built to guard against, both of which throw *before* the `child` update line is ever reached and correctly prevent it from running at all. Not solved here — `child` staying MyISAM is an established, unrelated project convention, not something this task should change — just documented so it isn't mistaken for full atomicity.
 
 - [ ] **Step 2: Add the method**
 

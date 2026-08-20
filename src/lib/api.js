@@ -26,5 +26,9 @@ export const api = {
   updates:       ()   => apiFetch('/parent/updates'),
   updateDetail:  (id) => apiFetch(`/parent/updates/${id}`),
   membership:    ()   => apiFetch('/parent/membership'),
+  setFaceMatchConsent: (id, consent) => apiFetch(`/parent/child/${id}/face-match-consent`, {
+    method: 'PATCH',
+    body: JSON.stringify({ consent }),
+  }),
   logout:        ()   => apiFetch('/auth/logout', { method: 'POST' }),
 };

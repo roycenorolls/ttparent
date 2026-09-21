@@ -5,7 +5,7 @@ import { getGreeting } from '@/lib/time';
 import { api } from '@/lib/api';
 import ChildSwitcher  from '@/components/ChildSwitcher';
 import DayTimeline    from '@/components/DayTimeline';
-import UpdatesFeed    from '@/components/UpdatesFeed';
+import UpdatesFeed, { ReminderList, isPinnedReminder } from '@/components/UpdatesFeed';
 import TeacherWhatsApp from '@/components/TeacherWhatsApp';
 
 export default function HomePage() {
@@ -49,8 +49,11 @@ export default function HomePage() {
   const mine    = updates.filter(u => !u.child_ids?.length || u.child_ids.includes(activeId));
   const today   = new Date().toDateString();
   const isToday = u => new Date(u.created_at).toDateString() === today;
-  const todays  = mine.filter(isToday);
-  const earlier = mine.filter(u => !isToday(u));
+  // Recent reminders sit right under the child's status, apart from the posts.
+  const reminders = mine.filter(isPinnedReminder);
+  const rest      = mine.filter(u => !isPinnedReminder(u));
+  const todays    = rest.filter(isToday);
+  const earlier   = rest.filter(u => !isToday(u));
 
   if (error) {
     return (
@@ -76,6 +79,7 @@ export default function HomePage() {
 
       <ChildSwitcher children={children} activeId={activeId} onChange={setActiveId} style={{ padding: '0 16px' }} />
       <DayTimeline child={child} status={status} updates={todays} />
+      <ReminderList updates={reminders} />
       <UpdatesFeed title="Earlier updates" updates={earlier} />
       {child?.teacher && <TeacherWhatsApp teacher={child.teacher} />}
     </div>

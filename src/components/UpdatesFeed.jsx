@@ -34,6 +34,22 @@ function Pill({ children, overlay }) {
 }
 
 // A class-wide notice with no photo reads as a reminder, not a post.
+export const isReminder = u => u.type === 'announcement' && !(u.image || u.thumbnail);
+
+// Reminders newer than this are pinned under the child's status on Home.
+const PINNED_DAYS = 7;
+export const isPinnedReminder = u =>
+  isReminder(u) && Date.now() - new Date(u.created_at).getTime() < PINNED_DAYS * 86400000;
+
+export function ReminderList({ updates }) {
+  if (!updates?.length) return null;
+  return (
+    <div style={{ margin: '0 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {updates.map(u => <ReminderCard key={u.id} u={u} />)}
+    </div>
+  );
+}
+
 function ReminderCard({ u }) {
   return (
     <Link href={`/gallery/${u.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
@@ -72,7 +88,7 @@ function ReminderCard({ u }) {
  */
 export function PostCard({ u, showDate }) {
   const photo = u.image || u.thumbnail;
-  if (!photo && u.type === 'announcement') return <ReminderCard u={u} />;
+  if (isReminder(u)) return <ReminderCard u={u} />;
 
   return (
     <article style={CARD}>

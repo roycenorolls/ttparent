@@ -6,11 +6,13 @@ import { api } from '@/lib/api';
 import { getDistanceKm } from '@/lib/haversine';
 import MembershipCard from '@/components/MembershipCard';
 import TenantCard     from '@/components/TenantCard';
+import QrScanModal    from '@/components/QrScanModal';
 
 export default function CardPage() {
   const [data,     setData]     = useState(null);
   const [tenants,  setTenants]  = useState([]);
   const [location, setLocation] = useState(null);
+  const [showQr,   setShowQr]   = useState(false);
 
   useEffect(() => {
     api.membership().then(d => {
@@ -42,6 +44,18 @@ export default function CardPage() {
       </div>
 
       <MembershipCard parent={data?.parent} children={data?.children} />
+
+      <div style={{ padding: '16px 16px 0' }}>
+        <button onClick={() => setShowQr(true)} disabled={!data?.parent} style={{
+          width: '100%', padding: '12px 14px', borderRadius: 999, border: 'none', cursor: 'pointer',
+          background: '#0A3A82', color: '#fff', fontSize: 14, fontWeight: 700, fontFamily: 'inherit',
+          boxShadow: '0 4px 10px -2px rgba(10,58,130,.35)',
+        }}>
+          Scan QR
+        </button>
+      </div>
+
+      {showQr && <QrScanModal parent={data.parent} onClose={() => setShowQr(false)} />}
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 16px 10px' }}>
         <span style={{ fontSize: 16, fontWeight: 500, color: 'var(--tt-text)' }}>Partners near you</span>

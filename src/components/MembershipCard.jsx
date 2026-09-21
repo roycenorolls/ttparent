@@ -1,9 +1,11 @@
 'use client';
 import QRCode from 'qrcode';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import QrScanModal from '@/components/QrScanModal';
 
 export default function MembershipCard({ parent, children }) {
   const qrRef = useRef(null);
+  const [showQr, setShowQr] = useState(false);
 
   useEffect(() => {
     if (qrRef.current && parent?.member_id) {
@@ -48,7 +50,13 @@ export default function MembershipCard({ parent, children }) {
         </div>
 
         {/* QR code */}
-        <div style={{ position: 'relative', background: '#fff', padding: 8, borderRadius: 16, boxShadow: '0 4px 6px rgba(0,0,0,.12)', flexShrink: 0 }}>
+        <button
+          type="button"
+          onClick={() => setShowQr(true)}
+          disabled={!parent?.member_id}
+          aria-label="Open QR code"
+          style={{ position: 'relative', background: '#fff', padding: 8, borderRadius: 16, boxShadow: '0 4px 6px rgba(0,0,0,.12)', flexShrink: 0, border: 'none', cursor: 'pointer', font: 'inherit' }}
+        >
           <canvas ref={qrRef} style={{ display: 'block', borderRadius: 8 }} />
           <span style={{
             position: 'absolute', bottom: -8, left: -4, right: -4, textAlign: 'center',
@@ -57,7 +65,7 @@ export default function MembershipCard({ parent, children }) {
           }}>
             SCAN
           </span>
-        </div>
+        </button>
       </div>
 
       <div style={{
@@ -79,6 +87,7 @@ export default function MembershipCard({ parent, children }) {
           </div>
         )}
       </div>
+      {showQr && <QrScanModal parent={parent} onClose={() => setShowQr(false)} />}
     </section>
   );
 }

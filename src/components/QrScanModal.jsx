@@ -41,8 +41,16 @@ export default function QrScanModal({ parent, onClose }) {
           {parent?.title} {parent?.name}
         </div>
         <div style={{ fontSize: 13, color: 'var(--tt-muted)', marginTop: 2 }}>#{parent?.member_id}</div>
+        {/* Menu option only — camera scanning isn't built yet. */}
+        <button type="button" style={{
+          width: '100%', marginTop: 20, padding: '10px 14px', borderRadius: 999, cursor: 'pointer',
+          background: '#fff', color: '#0A3A82', border: '1px solid #0A3A82', fontSize: 14, fontWeight: 700,
+          fontFamily: 'inherit',
+        }}>
+          Scan QR with camera
+        </button>
         <button onClick={onClose} style={{
-          width: '100%', marginTop: 20, padding: '10px 14px', borderRadius: 999, border: 'none',
+          width: '100%', marginTop: 10, padding: '10px 14px', borderRadius: 999, border: 'none',
           cursor: 'pointer', background: '#0A3A82', color: '#fff', fontSize: 14, fontWeight: 700,
           fontFamily: 'inherit',
         }}>

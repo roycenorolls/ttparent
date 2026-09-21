@@ -131,15 +131,36 @@ export function PostCard({ u, showDate }) {
   );
 }
 
-const PILL = {
-  display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 999,
-  background: '#F3EEE3', color: '#5C5549', fontSize: 14, fontWeight: 700,
-  border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+// Light for the feed cards, dark for the fullscreen photo viewer.
+const THEMES = {
+  light: {
+    pill: '#F3EEE3', pillInk: '#5C5549', likedBg: '#FDE8EC', likedInk: '#BE123C',
+    time: '#8C8476', rule: '#F1ECE1', note: '#8C8476',
+    bubble: '#F8F4EC', bubbleInk: '#3D382E', meta: '#8C8476',
+    input: { border: '1px solid #EAE3D2', background: '#fff', color: 'inherit' },
+    send: { background: '#0A3A82', color: '#fff' },
+    bar: '16px 24px 22px', panel: '16px 24px 22px',
+  },
+  dark: {
+    pill: 'rgba(255,255,255,0.15)', pillInk: '#FDF6EE', likedBg: 'rgba(244,63,94,0.28)', likedInk: '#FDA4AF',
+    time: 'rgba(253,246,238,0.6)', rule: 'rgba(255,255,255,0.12)', note: 'rgba(253,246,238,0.6)',
+    bubble: 'rgba(255,255,255,0.10)', bubbleInk: '#FDF6EE', meta: 'rgba(253,246,238,0.55)',
+    input: { border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.08)', color: '#fff' },
+    send: { background: '#FDF6EE', color: '#0A3A82' },
+    bar: '4px 16px 12px', panel: '12px 16px 16px',
+  },
 };
 
-// Like, comment and time. Likes show a total; comments are private to the
-// teachers, so the thread below only ever lists the parent's own.
-function Engagement({ u, time }) {
+const pill = (T, on) => ({
+  display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 999,
+  background: on ? T.likedBg : T.pill, color: on ? T.likedInk : T.pillInk,
+  fontSize: 14, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+});
+
+// Like, comment and (optionally) time. Likes show a total; comments are private
+// to the teachers, so the thread below only ever lists the parent's own.
+export function Engagement({ u, time, dark }) {
+  const T = dark ? THEMES.dark : THEMES.light;
   const [liked, setLiked] = useState(!!u.liked);
   const [likes, setLikes] = useState(u.like_count || 0);
   const [mine,  setMine]  = useState(u.comment_count || 0);
@@ -155,22 +176,21 @@ function Engagement({ u, time }) {
 
   return (
     <>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 24px 22px' }}>
-        <button onClick={toggleLike} aria-pressed={liked} aria-label={liked ? 'Unlike' : 'Like'}
-          style={{ ...PILL, ...(liked ? { background: '#FDE8EC', color: '#BE123C' } : null) }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: T.bar }}>
+        <button onClick={toggleLike} aria-pressed={liked} aria-label={liked ? 'Unlike' : 'Like'} style={pill(T, liked)}>
           <HeartIcon filled={liked} />{likes}
         </button>
-        <button onClick={() => setOpen(o => !o)} aria-expanded={open} style={PILL}>
+        <button onClick={() => setOpen(o => !o)} aria-expanded={open} style={pill(T, false)}>
           <CommentIcon />{mine > 0 ? `Comment · ${mine}` : 'Comment'}
         </button>
-        <span style={{ marginLeft: 'auto', fontSize: 14, color: '#8C8476', fontWeight: 500, flexShrink: 0 }}>{time}</span>
+        {time && <span style={{ marginLeft: 'auto', fontSize: 14, color: T.time, fontWeight: 500, flexShrink: 0 }}>{time}</span>}
       </div>
-      {open && <CommentPanel updateId={u.id} onAdded={() => setMine(n => n + 1)} />}
+      {open && <CommentPanel T={T} updateId={u.id} onAdded={() => setMine(n => n + 1)} />}
     </>
   );
 }
 
-function CommentPanel({ updateId, onAdded }) {
+function CommentPanel({ T, updateId, onAdded }) {
   const [items,   setItems]   = useState(null);
   const [text,    setText]    = useState('');
   const [sending, setSending] = useState(false);
@@ -192,14 +212,14 @@ function CommentPanel({ updateId, onAdded }) {
   };
 
   return (
-    <div style={{ padding: '16px 24px 22px', borderTop: '1px solid #F1ECE1' }}>
-      <div style={{ fontSize: 12, color: '#8C8476', marginBottom: 10 }}>
+    <div style={{ padding: T.panel, borderTop: `1px solid ${T.rule}` }}>
+      <div style={{ fontSize: 12, color: T.note, marginBottom: 10 }}>
         🔒 Only the teachers can read your comments.
       </div>
       {(items || []).map(c => (
-        <div key={c.id} style={{ background: '#F8F4EC', borderRadius: 18, padding: '10px 14px', marginBottom: 8 }}>
-          <div style={{ fontSize: 14, color: '#3D382E', lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{c.body}</div>
-          <div style={{ fontSize: 11, color: '#8C8476', marginTop: 4 }}>{shortDate(c.created_at)} · {clock(c.created_at)}</div>
+        <div key={c.id} style={{ background: T.bubble, borderRadius: 18, padding: '10px 14px', marginBottom: 8 }}>
+          <div style={{ fontSize: 14, color: T.bubbleInk, lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{c.body}</div>
+          <div style={{ fontSize: 11, color: T.meta, marginTop: 4 }}>{shortDate(c.created_at)} · {clock(c.created_at)}</div>
         </div>
       ))}
       <form onSubmit={send} style={{ display: 'flex', gap: 8, marginTop: 4 }}>
@@ -207,18 +227,18 @@ function CommentPanel({ updateId, onAdded }) {
           value={text} onChange={e => setText(e.target.value)} maxLength={500}
           placeholder="Write a comment…" aria-label="Write a comment"
           style={{
-            flex: 1, minWidth: 0, padding: '10px 14px', borderRadius: 999, border: '1px solid #EAE3D2',
-            background: '#fff', fontSize: 14, fontFamily: 'inherit', outline: 'none',
+            flex: 1, minWidth: 0, padding: '10px 14px', borderRadius: 999, fontSize: 14, fontFamily: 'inherit',
+            outline: 'none', ...T.input,
           }}
         />
         <button type="submit" disabled={!text.trim() || sending} style={{
           padding: '10px 16px', borderRadius: 999, border: 'none', fontSize: 14, fontWeight: 700, fontFamily: 'inherit',
-          background: '#0A3A82', color: '#fff', cursor: 'pointer', opacity: !text.trim() || sending ? 0.45 : 1,
+          cursor: 'pointer', opacity: !text.trim() || sending ? 0.45 : 1, ...T.send,
         }}>
           Send
         </button>
       </form>
-      {error && <div style={{ fontSize: 12, color: '#B91C1C', marginTop: 6 }}>{error}</div>}
+      {error && <div style={{ fontSize: 12, color: '#F87171', marginTop: 6 }}>{error}</div>}
     </div>
   );
 }

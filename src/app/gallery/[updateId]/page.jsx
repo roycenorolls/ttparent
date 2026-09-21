@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
+import { Engagement } from '@/components/UpdatesFeed';
 
 export default function FullscreenViewer() {
   const { updateId } = useParams();
@@ -76,6 +77,9 @@ export default function FullscreenViewer() {
           {teacher ? ` · Posted by ${teacher.title || 'Ms.'} ${teacher.name?.split(' ')[0]}` : ''}
         </div>
       </div>
+
+      {/* Like / comment */}
+      <Engagement u={update} dark />
 
       {/* Actions */}
       <div style={{ display: 'flex', gap: 10, padding: '12px 16px', paddingBottom: 'calc(16px + env(safe-area-inset-bottom))' }}>

@@ -25,6 +25,12 @@ export const api = {
   scheduleWeek:  (id) => apiFetch(`/parent/child/${id}/schedule/week`),
   updates:       ()   => apiFetch('/parent/updates'),
   updateDetail:  (id) => apiFetch(`/parent/updates/${id}`),
+  toggleLike:    (id) => apiFetch(`/parent/updates/${id}/like`, { method: 'POST' }),
+  comments:      (id) => apiFetch(`/parent/updates/${id}/comments`),
+  addComment:    (id, body) => apiFetch(`/parent/updates/${id}/comments`, {
+    method: 'POST',
+    body: JSON.stringify({ body }),
+  }),
   membership:    ()   => apiFetch('/parent/membership'),
   setFaceMatchConsent: (id, consent) => apiFetch(`/parent/child/${id}/face-match-consent`, {
     method: 'PATCH',

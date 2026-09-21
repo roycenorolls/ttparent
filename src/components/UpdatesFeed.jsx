@@ -1,4 +1,7 @@
+'use client';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { api } from '@/lib/api';
 
 const CAPTION_CLAMP = {
   display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden',
@@ -94,6 +97,7 @@ export function PostCard({ u, showDate }) {
 
         <div style={{ padding: '22px 24px 0' }}>
           {!photo && u.class_name && <Pill>{u.class_name}</Pill>}
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#8C8476', marginBottom: 4 }}>{u.teacher_name || 'TutorTime'}</div>
           <h3 style={{
             margin: 0, fontFamily: 'var(--tt-font-heading)', fontSize: 21, fontWeight: 800,
             letterSpacing: '-0.01em', color: '#1A1712', lineHeight: 1.25,
@@ -106,18 +110,116 @@ export function PostCard({ u, showDate }) {
         </div>
       </Link>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '16px 24px 22px' }}>
-        <span style={{
-          padding: '9px 16px', borderRadius: 999, background: '#F3EEE3', color: '#5C5549',
-          fontSize: 14, fontWeight: 700, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-        }}>
-          {u.teacher_name || 'TutorTime'}
-        </span>
-        <span style={{ fontSize: 14, color: '#8C8476', fontWeight: 500, flexShrink: 0 }}>
-          {showDate ? `${shortDate(u.created_at)} · ` : ''}{clock(u.created_at)}
-        </span>
-      </div>
+      <Engagement u={u} time={`${showDate ? `${shortDate(u.created_at)} · ` : ''}${clock(u.created_at)}`} />
     </article>
+  );
+}
+
+const PILL = {
+  display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 999,
+  background: '#F3EEE3', color: '#5C5549', fontSize: 14, fontWeight: 700,
+  border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+};
+
+// Like, comment and time. Likes show a total; comments are private to the
+// teachers, so the thread below only ever lists the parent's own.
+function Engagement({ u, time }) {
+  const [liked, setLiked] = useState(!!u.liked);
+  const [likes, setLikes] = useState(u.like_count || 0);
+  const [mine,  setMine]  = useState(u.comment_count || 0);
+  const [open,  setOpen]  = useState(false);
+
+  const toggleLike = () => {
+    const was = liked, prev = likes;
+    setLiked(!was); setLikes(prev + (was ? -1 : 1));           // optimistic
+    api.toggleLike(u.id)
+      .then(r => { setLiked(r.liked); setLikes(r.like_count); })
+      .catch(() => { setLiked(was); setLikes(prev); });
+  };
+
+  return (
+    <>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 24px 22px' }}>
+        <button onClick={toggleLike} aria-pressed={liked} aria-label={liked ? 'Unlike' : 'Like'}
+          style={{ ...PILL, ...(liked ? { background: '#FDE8EC', color: '#BE123C' } : null) }}>
+          <HeartIcon filled={liked} />{likes}
+        </button>
+        <button onClick={() => setOpen(o => !o)} aria-expanded={open} style={PILL}>
+          <CommentIcon />{mine > 0 ? `Comment · ${mine}` : 'Comment'}
+        </button>
+        <span style={{ marginLeft: 'auto', fontSize: 14, color: '#8C8476', fontWeight: 500, flexShrink: 0 }}>{time}</span>
+      </div>
+      {open && <CommentPanel updateId={u.id} onAdded={() => setMine(n => n + 1)} />}
+    </>
+  );
+}
+
+function CommentPanel({ updateId, onAdded }) {
+  const [items,   setItems]   = useState(null);
+  const [text,    setText]    = useState('');
+  const [sending, setSending] = useState(false);
+  const [error,   setError]   = useState(null);
+
+  useEffect(() => {
+    api.comments(updateId).then(d => setItems(d.comments || [])).catch(() => setItems([]));
+  }, [updateId]);
+
+  const send = e => {
+    e.preventDefault();
+    const body = text.trim();
+    if (!body || sending) return;
+    setSending(true); setError(null);
+    api.addComment(updateId, body)
+      .then(d => { setItems(list => [...(list || []), d.comment]); setText(''); onAdded(); })
+      .catch(() => setError("Couldn't send. Please try again."))
+      .finally(() => setSending(false));
+  };
+
+  return (
+    <div style={{ padding: '16px 24px 22px', borderTop: '1px solid #F1ECE1' }}>
+      <div style={{ fontSize: 12, color: '#8C8476', marginBottom: 10 }}>
+        🔒 Only the teachers can read your comments.
+      </div>
+      {(items || []).map(c => (
+        <div key={c.id} style={{ background: '#F8F4EC', borderRadius: 18, padding: '10px 14px', marginBottom: 8 }}>
+          <div style={{ fontSize: 14, color: '#3D382E', lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{c.body}</div>
+          <div style={{ fontSize: 11, color: '#8C8476', marginTop: 4 }}>{shortDate(c.created_at)} · {clock(c.created_at)}</div>
+        </div>
+      ))}
+      <form onSubmit={send} style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+        <input
+          value={text} onChange={e => setText(e.target.value)} maxLength={500}
+          placeholder="Write a comment…" aria-label="Write a comment"
+          style={{
+            flex: 1, minWidth: 0, padding: '10px 14px', borderRadius: 999, border: '1px solid #EAE3D2',
+            background: '#fff', fontSize: 14, fontFamily: 'inherit', outline: 'none',
+          }}
+        />
+        <button type="submit" disabled={!text.trim() || sending} style={{
+          padding: '10px 16px', borderRadius: 999, border: 'none', fontSize: 14, fontWeight: 700, fontFamily: 'inherit',
+          background: '#0A3A82', color: '#fff', cursor: 'pointer', opacity: !text.trim() || sending ? 0.45 : 1,
+        }}>
+          Send
+        </button>
+      </form>
+      {error && <div style={{ fontSize: 12, color: '#B91C1C', marginTop: 6 }}>{error}</div>}
+    </div>
+  );
+}
+
+function HeartIcon({ filled }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 00-7.8 7.8l1 1.1L12 21.2l7.8-7.7 1-1.1a5.5 5.5 0 000-7.8z" />
+    </svg>
+  );
+}
+
+function CommentIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M21 12a8 8 0 01-11.6 7.1L4 20l1.2-4.4A8 8 0 1121 12z" />
+    </svg>
   );
 }
 

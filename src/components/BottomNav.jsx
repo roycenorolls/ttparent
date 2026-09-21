@@ -7,6 +7,7 @@ const tabs = [
   { href: '/gallery',  label: 'Gallery',  icon: GalleryIcon },
   { href: '/card',     label: 'Card',     icon: CardIcon },
   { href: '/schedule', label: 'Schedule', icon: ScheduleIcon },
+  { href: '/settings', label: 'Profile',  icon: ProfileIcon },
 ];
 
 export default function BottomNav() {
@@ -17,22 +18,25 @@ export default function BottomNav() {
 
   return (
     <nav style={{
-      position: 'fixed', bottom: 0, left: 0, right: 0,
-      background: 'var(--tt-surface)', borderTop: '1px solid var(--tt-border)',
-      display: 'flex', paddingBottom: 'env(safe-area-inset-bottom)',
-      zIndex: 100,
+      position: 'fixed', left: '50%', transform: 'translateX(-50%)',
+      bottom: 'calc(16px + env(safe-area-inset-bottom))',
+      width: '92%', maxWidth: 400, zIndex: 100,
+      background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+      border: '1px solid rgba(226,232,240,0.8)', borderRadius: 999,
+      boxShadow: 'var(--tt-shadow-float)',
+      display: 'flex', padding: '10px 12px',
     }}>
       {tabs.map(({ href, label, icon: Icon }) => {
         const active = path === href || (href !== '/' && path.startsWith(href));
-        const color = active ? 'var(--tt-blue)' : 'var(--tt-placeholder)';
+        const color = active ? 'var(--tt-cobalt)' : 'var(--tt-placeholder)';
         return (
           <Link key={href} href={href} style={{
             flex: 1, display: 'flex', flexDirection: 'column',
             alignItems: 'center', gap: 3,
-            padding: '9px 0 13px', textDecoration: 'none',
+            padding: '2px 0', textDecoration: 'none',
           }}>
             <Icon color={color} />
-            <span style={{ fontSize: 10, color, fontWeight: active ? 500 : 400 }}>{label}</span>
+            <span style={{ fontSize: 10, color, fontWeight: active ? 700 : 600 }}>{label}</span>
           </Link>
         );
       })}
@@ -75,6 +79,15 @@ function ScheduleIcon({ color }) {
       <line x1="16" y1="2" x2="16" y2="6"/>
       <line x1="8" y1="2" x2="8" y2="6"/>
       <line x1="3" y1="10" x2="21" y2="10"/>
+    </svg>
+  );
+}
+
+function ProfileIcon({ color }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="8" r="4"/>
+      <path d="M4 21a8 8 0 0116 0z"/>
     </svg>
   );
 }

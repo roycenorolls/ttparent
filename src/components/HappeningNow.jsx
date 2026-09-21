@@ -30,9 +30,9 @@ export default function HappeningNow({ slots }) {
   const progress = Math.min(100, Math.round((elapsed / duration) * 100));
 
   return (
-    <div style={{ margin: '0 16px', background: '#fff', borderRadius: 14, padding: '14px 16px', border: '1px solid var(--tt-border)' }}>
+    <div style={{ margin: '0 16px', background: '#fff', borderRadius: 16, padding: 16, border: '1px solid #F1F5F9', boxShadow: 'var(--tt-shadow-soft)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-        <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--tt-blue)', letterSpacing: 0.5, textTransform: 'uppercase' }}>
+        <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--tt-cobalt)', letterSpacing: 0.5, textTransform: 'uppercase' }}>
           Happening Now
         </span>
         {/* Red is reserved for failure everywhere else, but a live dot is the
@@ -44,7 +44,7 @@ export default function HappeningNow({ slots }) {
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-        <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--tt-blue-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>
+        <div style={{ width: 44, height: 44, borderRadius: 16, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>
           {current.icon || '📚'}
         </div>
         <div>
@@ -56,8 +56,8 @@ export default function HappeningNow({ slots }) {
         </div>
       </div>
 
-      <div style={{ height: 4, background: 'var(--tt-blue-tint)', borderRadius: 2, overflow: 'hidden' }}>
-        <div style={{ height: '100%', width: `${progress}%`, background: 'var(--tt-blue)', borderRadius: 2, transition: 'width 1s' }} />
+      <div style={{ height: 6, background: '#DBEAFE', borderRadius: 3, overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${progress}%`, background: 'var(--tt-cobalt)', borderRadius: 3, transition: 'width 1s' }} />
       </div>
 
       {nextSlot && (
@@ -72,7 +72,7 @@ export default function HappeningNow({ slots }) {
 function RecapCard({ slots }) {
   const shown = slots.slice(0, 3);
   return (
-    <div style={{ margin: '0 16px', background: 'var(--tt-yellow-tint)', borderRadius: 14, padding: '14px 16px' }}>
+    <div style={{ margin: '0 16px', background: '#FFFBEB', borderRadius: 16, padding: 16, border: '1px solid #FDE68A', boxShadow: 'var(--tt-shadow-soft)' }}>
       <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--tt-yellow-text)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>
         Today's Activities
       </div>
@@ -91,12 +91,12 @@ function RecapCard({ slots }) {
 
 function UpcomingCard({ slot }) {
   return (
-    <div style={{ margin: '0 16px', background: '#fff', borderRadius: 14, padding: '14px 16px', border: '1px solid var(--tt-border)' }}>
+    <div style={{ margin: '0 16px', background: '#fff', borderRadius: 16, padding: 16, border: '1px solid #F1F5F9', boxShadow: 'var(--tt-shadow-soft)' }}>
       <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--tt-muted)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>
         Up Next
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--tt-blue-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>
+        <div style={{ width: 44, height: 44, borderRadius: 16, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>
           {slot.icon || '📚'}
         </div>
         <div>

@@ -9,27 +9,27 @@ import { formatTime } from '@/lib/time';
  */
 const STATES = {
   before: {
-    icon: ClockIcon, tint: 'var(--tt-yellow-tint)', accent: 'var(--tt-yellow)',
+    icon: ClockIcon, tint: '#FEF3C7', accent: '#F59E0B', label: 'Scheduled', chip: '#B45309', chipBg: '#FFFBEB', chipBorder: '#FDE68A',
     title: (c) => `We're waiting for ${c} at school`,
     sub:   (d) => `Drop-off opens at ${d.open_time ? formatTime(d.open_time) : '07:30'}`
                 + `${d.class_name ? ` · ${d.class_name}` : ''}`,
   },
   checkedin: {
-    icon: ShieldIcon, tint: 'var(--tt-green-tint)', accent: 'var(--tt-green)',
+    icon: ShieldIcon, tint: '#DCFCE7', accent: '#16A34A', label: 'At school', chip: '#15803D', chipBg: '#F0FDF4', chipBorder: '#BBF7D0',
     title: (c) => `${c} is at school`,
     sub:   (d) => d.by_name
       ? `Dropped off at ${formatTime(d.checkin_time)} by ${d.by_name}`
       : `Dropped off at ${formatTime(d.checkin_time)}`,
   },
   checkedout: {
-    icon: HomeIcon, tint: 'var(--tt-green-tint)', accent: 'var(--tt-green)',
+    icon: HomeIcon, tint: '#DCFCE7', accent: '#16A34A', label: 'Home safe', chip: '#15803D', chipBg: '#F0FDF4', chipBorder: '#BBF7D0',
     title: (c) => `${c} is home safe`,
     sub:   (d) => d.out_by
       ? `Collected at ${formatTime(d.checkout_time)} by ${d.out_by}`
       : `Dropped off ${formatTime(d.checkin_time)} · Checked out ${formatTime(d.checkout_time)}`,
   },
   absent: {
-    icon: CalendarIcon, tint: 'var(--tt-yellow-tint)', accent: 'var(--tt-yellow)',
+    icon: CalendarIcon, tint: '#FEF3C7', accent: '#F59E0B', label: 'Away', chip: '#B45309', chipBg: '#FFFBEB', chipBorder: '#FDE68A',
     title: (c, d) => d.reason === 'vacation'
       ? `${c} is away today`
       : `${c} isn't expected today`,
@@ -49,25 +49,34 @@ export default function CheckInCard({ child, status }) {
 
   return (
     <div style={{
-      margin: '0 16px', background: state.tint,
-      borderRadius: 14, padding: '14px 16px',
-      display: 'flex', alignItems: 'center', gap: 14,
+      margin: '0 16px', background: '#fff', borderRadius: 16, padding: 16,
+      border: `1px solid ${state.chipBorder}`, boxShadow: 'var(--tt-shadow-soft)',
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
     }}>
-      <div style={{
-        width: 44, height: 44, borderRadius: 12, flexShrink: 0,
-        background: state.accent,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+        <div style={{
+          width: 44, height: 44, borderRadius: 16, flexShrink: 0,
+          background: state.tint, color: state.chip,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <Icon />
+        </div>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', lineHeight: 1.3 }}>
+            {state.title(name, data)}
+          </div>
+          <div style={{ fontSize: 11, color: '#64748B', fontWeight: 500, marginTop: 2 }}>
+            {state.sub(data)}
+          </div>
+        </div>
+      </div>
+      <span style={{
+        flexShrink: 0, padding: '4px 8px', borderRadius: 8, textTransform: 'uppercase',
+        fontSize: 10, fontWeight: 700, letterSpacing: '0.06em',
+        color: state.chip, background: state.chipBg, border: `1px solid ${state.chipBorder}`,
       }}>
-        <Icon />
-      </div>
-      <div>
-        <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--tt-text)', marginBottom: 2 }}>
-          {state.title(name, data)}
-        </div>
-        <div style={{ fontSize: 12, color: 'var(--tt-muted)' }}>
-          {state.sub(data)}
-        </div>
-      </div>
+        {state.label}
+      </span>
     </div>
   );
 }
@@ -75,7 +84,7 @@ export default function CheckInCard({ child, status }) {
 /* Inline SVG rather than emoji — emoji render inconsistently across Android
    and can't inherit the accent colour. */
 const stroke = {
-  width: 22, height: 22, viewBox: '0 0 24 24', fill: 'none', stroke: '#fff',
+  width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor',
   strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round',
   'aria-hidden': 'true',
 };

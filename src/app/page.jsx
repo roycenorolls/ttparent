@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { getGreeting } from '@/lib/time';
 import { api } from '@/lib/api';
 import ChildSwitcher  from '@/components/ChildSwitcher';
-import MembershipCard from '@/components/MembershipCard';
 import CheckInCard    from '@/components/CheckInCard';
 import HappeningNow   from '@/components/HappeningNow';
 import UpdatesFeed    from '@/components/UpdatesFeed';
@@ -74,7 +73,6 @@ export default function HomePage() {
       </div>
 
       <ChildSwitcher children={children} activeId={activeId} onChange={setActiveId} style={{ padding: '0 16px' }} />
-      <MembershipCard parent={parent} children={children} />
       <CheckInCard child={child} status={status} />
       <HappeningNow slots={slots} />
       <UpdatesFeed updates={updates.filter(u => !u.child_ids?.length || u.child_ids.includes(activeId))} />

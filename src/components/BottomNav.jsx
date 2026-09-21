@@ -21,19 +21,32 @@ export default function BottomNav() {
       position: 'fixed', left: '50%', transform: 'translateX(-50%)',
       bottom: 'calc(16px + env(safe-area-inset-bottom))',
       width: '92%', maxWidth: 400, zIndex: 100,
-      background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
-      border: '1px solid rgba(226,232,240,0.8)', borderRadius: 999,
-      boxShadow: 'var(--tt-shadow-float)',
-      display: 'flex', padding: '10px 12px',
+      // Liquid glass: a translucent, saturated blur with a bright top rim,
+      // a soft inner glow and a sheen gradient so content shows through.
+      background: 'linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.28) 100%)',
+      backdropFilter: 'blur(22px) saturate(180%)', WebkitBackdropFilter: 'blur(22px) saturate(180%)',
+      border: '1px solid rgba(255,255,255,0.6)', borderRadius: 999,
+      boxShadow: [
+        'inset 0 1px 0 rgba(255,255,255,0.9)',
+        'inset 0 -1px 0 rgba(255,255,255,0.25)',
+        'inset 0 0 12px rgba(255,255,255,0.35)',
+        '0 12px 32px -6px rgba(10,58,130,0.18)',
+        '0 2px 6px rgba(15,23,42,0.06)',
+      ].join(', '),
+      display: 'flex', alignItems: 'center', gap: 4, padding: 6,
     }}>
       {tabs.map(({ href, label, icon: Icon }) => {
         const active = path === href || (href !== '/' && path.startsWith(href));
-        const color = active ? 'var(--tt-cobalt)' : 'var(--tt-placeholder)';
+        const color = active ? '#fff' : '#475569';
         return (
-          <Link key={href} href={href} style={{
-            flex: 1, display: 'flex', flexDirection: 'column',
-            alignItems: 'center', gap: 3,
-            padding: '2px 0', textDecoration: 'none',
+          <Link key={href} href={href} aria-current={active ? 'page' : undefined} style={{
+            flex: 1, height: 56, display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center', gap: 3,
+            borderRadius: 999, textDecoration: 'none',
+            // The current page sits in a solid navy pill.
+            background: active ? 'linear-gradient(180deg, #1B4F9E 0%, #0A3A82 100%)' : 'transparent',
+            boxShadow: active ? 'inset 0 1px 0 rgba(255,255,255,.35), 0 4px 12px -2px rgba(10,58,130,.45)' : 'none',
+            transition: 'background .2s',
           }}>
             <Icon color={color} />
             <span style={{ fontSize: 10, color, fontWeight: active ? 700 : 600 }}>{label}</span>

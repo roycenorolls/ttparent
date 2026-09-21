@@ -1,4 +1,6 @@
 'use client';
+import AppHeader from '@/components/AppHeader';
+import ChildSwitcher from '@/components/ChildSwitcher';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import GalleryGrid, { visibleItems } from '@/components/GalleryGrid';
@@ -30,21 +32,18 @@ export default function GalleryPage() {
       .catch(() => {});
   }, []);
 
-  const active = children.find(c => c.id === activeId);
   const count  = visibleItems(updates, filter, activeId).length;
 
   return (
     <div style={{ background: '#fff', minHeight: '100dvh' }}>
-      <header style={{
-        position: 'sticky', top: 0, zIndex: 40,
+      <AppHeader title="Gallery" />
+      <div style={{
         background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(24px) saturate(180%)', WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-        borderBottom: '1px solid rgba(0,0,0,0.05)', padding: 'calc(12px + env(safe-area-inset-top)) 16px 10px',
+        borderBottom: '1px solid rgba(0,0,0,0.05)', padding: '12px 16px 10px',
       }}>
-        {active && (
-          <ChildPicker children={children} active={active} onChange={setActiveId} />
-        )}
+        <ChildSwitcher children={children} activeId={activeId} onChange={setActiveId} style={{ marginBottom: 12 }} />
 
-        <div style={{ marginTop: 10, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
           <h1 style={{ margin: 0, fontFamily: 'var(--tt-font-heading)', fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em', color: '#000', lineHeight: 1 }}>
             Photos
           </h1>
@@ -75,43 +74,12 @@ export default function GalleryPage() {
             );
           })}
         </div>
-      </header>
+      </div>
 
       {loading
         ? <div style={{ padding: 32, textAlign: 'center', color: '#8E8E93' }}>Loading…</div>
         : <GalleryGrid updates={updates} filter={filter} activeId={activeId} />
       }
-    </div>
-  );
-}
-
-// "Aria • Toddler" pill. A transparent native <select> sits on top so the
-// phone shows its own picker; with one child it is just a label.
-function ChildPicker({ children, active, onChange }) {
-  const many = children.length > 1;
-  return (
-    <div style={{
-      position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 6,
-      padding: '4px 10px', marginLeft: -4, borderRadius: 999, background: 'rgba(0,0,0,0.05)',
-      fontSize: 12, fontWeight: 600, color: '#1E293B',
-    }}>
-      <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#FEA619' }} />
-      <span>{active.firstname}{active.class ? ` • ${active.class}` : ''}</span>
-      {many && (
-        <>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M19 9l-7 7-7-7" />
-          </svg>
-          <select
-            aria-label="Choose child"
-            value={active.id}
-            onChange={e => onChange(Number(e.target.value))}
-            style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', cursor: 'pointer' }}
-          >
-            {children.map(c => <option key={c.id} value={c.id}>{c.firstname}</option>)}
-          </select>
-        </>
-      )}
     </div>
   );
 }

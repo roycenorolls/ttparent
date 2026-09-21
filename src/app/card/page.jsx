@@ -1,4 +1,5 @@
 'use client';
+import AppHeader from '@/components/AppHeader';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
@@ -30,9 +31,9 @@ export default function CardPage() {
     : tenants;
 
   return (
-    <div style={{ paddingTop: 16, paddingBottom: 24 }}>
-      <div style={{ padding: '0 16px 12px' }}>
-        <div style={{ fontSize: 20, fontWeight: 500, color: 'var(--tt-text)' }}>Member Card</div>
+    <div style={{ paddingBottom: 24 }}>
+      <AppHeader title="Member Card" />
+      <div style={{ padding: '12px 16px 12px' }}>
         {data?.parent && (
           <div style={{ fontSize: 13, color: 'var(--tt-muted)', marginTop: 2 }}>
             {data.parent.title} {data.parent.name} · #{data.parent.member_id}

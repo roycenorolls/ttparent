@@ -1,4 +1,5 @@
 'use client';
+import AppHeader from '@/components/AppHeader';
 import { useEffect, useState } from 'react';
 import { getGreeting } from '@/lib/time';
 import { api } from '@/lib/api';
@@ -8,7 +9,6 @@ import CheckInCard    from '@/components/CheckInCard';
 import HappeningNow   from '@/components/HappeningNow';
 import UpdatesFeed    from '@/components/UpdatesFeed';
 import TeacherWhatsApp from '@/components/TeacherWhatsApp';
-import TutorTimeMark  from '@/components/TutorTimeMark';
 
 export default function HomePage() {
   const [parent,   setParent]   = useState(null);
@@ -58,34 +58,22 @@ export default function HomePage() {
   }
 
   return (
-    <div style={{ paddingTop: 20, display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 24 }}>
-      {/* Brand + greeting */}
-      <header style={{ padding: '0 20px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 12 }}>
-          {/* Brand colours stay fixed, so the mark sits on a light tile. */}
-          <div style={{
-            width: 36, height: 36, borderRadius: 12, background: '#fff', flexShrink: 0,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 0 0 1px #E2E8F0, 0 1px 2px rgba(15,23,42,.06)',
-          }}>
-            <TutorTimeMark size={22} />
-          </div>
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--tt-cobalt)' }}>Tutor Time</div>
-            <div style={{ fontSize: 11, color: '#94A3B8', fontWeight: 500 }}>Early Childhood Education</div>
-          </div>
-        </div>
-        <h1 style={{
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 24 }}>
+      <AppHeader title="Home" />
+
+      {/* Greeting */}
+      <div style={{ padding: '4px 20px 0' }}>
+        <div style={{
           margin: 0, fontFamily: 'var(--tt-font-heading)', fontSize: 24, fontWeight: 800,
           letterSpacing: '-0.02em', color: '#0F172A',
         }}>
           {greeting.text}
           {parent?.name && <>, <span style={{ color: 'var(--tt-cobalt)' }}>{parent.title || 'Ms.'} {parent.name.split(' ')[0]}</span></>}
-        </h1>
+        </div>
         <div style={{ fontSize: 14, color: '#64748B', fontWeight: 500, marginTop: 2 }}>{greeting.sub}</div>
-      </header>
+      </div>
 
-      <ChildSwitcher children={children} activeId={activeId} onChange={setActiveId} />
+      <ChildSwitcher children={children} activeId={activeId} onChange={setActiveId} style={{ padding: '0 16px' }} />
       <MembershipCard parent={parent} children={children} />
       <CheckInCard child={child} status={status} />
       <HappeningNow slots={slots} />

@@ -1,4 +1,5 @@
 'use client';
+import AppHeader from '@/components/AppHeader';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 
@@ -32,9 +33,9 @@ export default function SettingsPage() {
   }
 
   return (
-    <div style={{ paddingTop: 16, paddingBottom: 24 }}>
-      <div style={{ padding: '0 16px 12px' }}>
-        <div style={{ fontSize: 20, fontWeight: 500, color: 'var(--tt-text)' }}>Privacy settings</div>
+    <div style={{ paddingBottom: 24 }}>
+      <AppHeader title="Privacy Settings" />
+      <div style={{ padding: '12px 16px 0' }}>
       </div>
 
       <div style={{ padding: '0 16px 16px', fontSize: 12, color: 'var(--tt-muted)', lineHeight: 1.5 }}>

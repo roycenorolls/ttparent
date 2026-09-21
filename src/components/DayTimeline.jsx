@@ -1,5 +1,5 @@
 import { formatTime, parseTime } from '@/lib/time';
-import { PostCard } from '@/components/UpdatesFeed';
+import { PostCard, ReminderList } from '@/components/UpdatesFeed';
 
 /**
  * The child's day on one rail: arrival (and who dropped them off), today's
@@ -22,7 +22,7 @@ function minutesOf(iso) {
   return d.getHours() * 60 + d.getMinutes();
 }
 
-export default function DayTimeline({ child, status, updates }) {
+export default function DayTimeline({ child, status, updates, reminders }) {
   const data  = status || {};
   const name  = child?.firstname || 'Your child';
   const state = data.state || 'before';
@@ -43,10 +43,10 @@ export default function DayTimeline({ child, status, updates }) {
   const order = { checkin: 0, before: 0, absent: 0 };
   items.sort((a, b) => a.t - b.t || (order[a.kind] ?? 1) - (order[b.kind] ?? 1));
 
-  return (
+  const rail = list => (
     <div style={{ position: 'relative', margin: '0 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div style={{ position: 'absolute', left: 13, top: 20, bottom: 20, width: 2, background: '#EAE3D2' }} />
-      {items.map((it, i) => (
+      {list.map((it, i) => (
         <div key={i} style={{ position: 'relative', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
           <Node kind={it.kind} />
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -56,6 +56,16 @@ export default function DayTimeline({ child, status, updates }) {
           </div>
         </div>
       ))}
+    </div>
+  );
+
+  // Pinned reminders sit directly under the arrival/status card, before the posts.
+  if (!reminders?.length) return rail(items);
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {rail(items.slice(0, 1))}
+      <ReminderList updates={reminders} />
+      {items.length > 1 && rail(items.slice(1))}
     </div>
   );
 }

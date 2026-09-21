@@ -5,7 +5,7 @@ import { getGreeting } from '@/lib/time';
 import { api } from '@/lib/api';
 import ChildSwitcher  from '@/components/ChildSwitcher';
 import DayTimeline    from '@/components/DayTimeline';
-import UpdatesFeed, { ReminderList, isPinnedReminder } from '@/components/UpdatesFeed';
+import UpdatesFeed, { isPinnedReminder } from '@/components/UpdatesFeed';
 import TeacherWhatsApp from '@/components/TeacherWhatsApp';
 
 export default function HomePage() {
@@ -78,8 +78,7 @@ export default function HomePage() {
       </div>
 
       <ChildSwitcher children={children} activeId={activeId} onChange={setActiveId} style={{ padding: '0 16px' }} />
-      <DayTimeline child={child} status={status} updates={todays} />
-      <ReminderList updates={reminders} />
+      <DayTimeline child={child} status={status} updates={todays} reminders={reminders} />
       <UpdatesFeed title="Earlier updates" updates={earlier} />
       {child?.teacher && <TeacherWhatsApp teacher={child.teacher} />}
     </div>

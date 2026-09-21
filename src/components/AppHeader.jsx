@@ -24,10 +24,10 @@ export default function AppHeader({ title }) {
         <TutorTimeMark size={24} />
       </div>
       <div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: '#0A3A82' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', color: '#0A3A82' }}>
           TUTOR TIME <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#FFC72C' }} />
         </div>
-        <h1 style={{ margin: 0, fontFamily: 'var(--tt-font-heading)', fontSize: 17, fontWeight: 700, color: '#131B2E', lineHeight: 1.2 }}>
+        <h1 style={{ margin: 0, fontFamily: 'var(--tt-font-heading)', fontSize: 18, fontWeight: 700, color: '#131B2E', lineHeight: 1.2 }}>
           {title}
         </h1>
       </div>

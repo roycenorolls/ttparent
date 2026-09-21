@@ -115,7 +115,7 @@ export default function LoginPage() {
                 border: '1px solid rgba(200,16,46,0.18)',
                 borderRadius: 14, padding: '12px 14px', marginBottom: 22,
               }}>
-                <p style={{ margin: 0, fontSize: 13, color: 'var(--tt-red-text)', lineHeight: 1.5 }}>
+                <p style={{ margin: 0, fontSize: 14, color: 'var(--tt-red-text)', lineHeight: 1.5 }}>
                   {error}
                 </p>
               </div>
@@ -139,7 +139,7 @@ export default function LoginPage() {
                   padding: '9px 12px', marginTop: 10,
                 }}>
                   <PinIcon />
-                  <span style={{ fontSize: 12, color: 'var(--tt-yellow-text)' }}>
+                  <span style={{ fontSize: 13, color: 'var(--tt-yellow-text)' }}>
                     {school.school_label}
                   </span>
                 </div>
@@ -178,7 +178,7 @@ export default function LoginPage() {
               {!busy && <ArrowIcon />}
             </button>
 
-            <p style={{ margin: '28px 0 0', fontSize: 14, color: 'var(--tt-label)',
+            <p style={{ margin: '28px 0 0', fontSize: 15, color: 'var(--tt-label)',
                         textAlign: 'center' }}>
               No password yet?{' '}
               <span style={{ color: 'var(--tt-red)', fontWeight: 700 }}>
@@ -248,7 +248,7 @@ function BlockedNotice({ school, onReset }) {
       <div style={{ background: 'var(--tt-yellow-tint)',
                     border: '1px solid rgba(255,202,5,0.35)',
                     borderRadius: 14, padding: 14, marginBottom: 22 }}>
-        <p style={{ margin: 0, fontSize: 13, color: 'var(--tt-yellow-text)', lineHeight: 1.6 }}>
+        <p style={{ margin: 0, fontSize: 14, color: 'var(--tt-yellow-text)', lineHeight: 1.6 }}>
           App access isn&rsquo;t switched on for this email yet. Ask the front desk at{' '}
           <span style={{ fontWeight: 700 }}>{school.school_label}</span> to set up your parent password.
         </p>
@@ -262,14 +262,14 @@ function BlockedNotice({ school, onReset }) {
                  textDecoration: 'none', marginBottom: 12, ...(wa.style || {}) }}
       >
         <WhatsAppIcon />
-        <span style={{ fontSize: 15, fontWeight: 600, color: '#fff',
+        <span style={{ fontSize: 16, fontWeight: 600, color: '#fff',
                        fontFamily: 'var(--tt-font-heading)' }}>Message the school</span>
       </Wrapper>
 
       <button type="button" onClick={onReset}
               style={{ width: '100%', height: 52, border: '1px solid rgba(84,110,122,0.25)',
                        borderRadius: 999, background: 'none',
-                       fontSize: 14, color: 'var(--tt-label)',
+                       fontSize: 15, color: 'var(--tt-label)',
                        fontFamily: 'inherit', cursor: 'pointer' }}>
         Try a different email
       </button>

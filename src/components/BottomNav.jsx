@@ -49,7 +49,7 @@ export default function BottomNav() {
             transition: 'background .2s',
           }}>
             <Icon color={color} />
-            <span style={{ fontSize: 10, color, fontWeight: active ? 700 : 600 }}>{label}</span>
+            <span style={{ fontSize: 11, color, fontWeight: active ? 700 : 600 }}>{label}</span>
           </Link>
         );
       })}

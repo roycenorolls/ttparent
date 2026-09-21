@@ -35,11 +35,11 @@ export default function DailyQuote() {
       borderRadius: '0 12px 12px 0',
       padding: '12px 14px',
     }}>
-      <p style={{ fontSize: 13, fontStyle: 'italic', color: 'var(--tt-yellow-text)', margin: 0, lineHeight: 1.5 }}>
+      <p style={{ fontSize: 14, fontStyle: 'italic', color: 'var(--tt-yellow-text)', margin: 0, lineHeight: 1.5 }}>
         &ldquo;{quote.quote}&rdquo;
       </p>
       {quote.author && (
-        <p style={{ fontSize: 11, color: 'var(--tt-yellow-text)', margin: '6px 0 0', fontWeight: 500 }}>
+        <p style={{ fontSize: 12, color: 'var(--tt-yellow-text)', margin: '6px 0 0', fontWeight: 500 }}>
           — {quote.author}
         </p>
       )}

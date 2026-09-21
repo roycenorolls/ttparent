@@ -14,7 +14,7 @@ export default function GalleryGrid({ updates, filter, activeId }) {
 
   if (!items.length) {
     return (
-      <div style={{ padding: '48px 16px', textAlign: 'center', color: '#8E8E93', fontSize: 14 }}>
+      <div style={{ padding: '48px 16px', textAlign: 'center', color: '#8E8E93', fontSize: 15 }}>
         Nothing here yet.
       </div>
     );
@@ -31,8 +31,8 @@ export default function GalleryGrid({ updates, filter, activeId }) {
             borderBottom: '1px solid rgba(0,0,0,0.05)',
             padding: '6px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
           }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: '#000', letterSpacing: '-0.01em' }}>{label}</span>
-            <span style={{ fontSize: 11, fontWeight: 500, color: '#8E8E93', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: '#000', letterSpacing: '-0.01em' }}>{label}</span>
+            <span style={{ fontSize: 12, fontWeight: 500, color: '#8E8E93', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {classes}
             </span>
           </div>
@@ -43,7 +43,7 @@ export default function GalleryGrid({ updates, filter, activeId }) {
       ))}
 
       <div style={{ padding: '32px 16px', textAlign: 'center' }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: '#000' }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: '#000' }}>
           {photos} {photos === 1 ? 'Photo' : 'Photos'}{videos ? `, ${videos} ${videos === 1 ? 'Video' : 'Videos'}` : ''}
         </div>
       </div>
@@ -59,7 +59,7 @@ function Tile({ item }) {
       {item.thumbnail ? (
         <img src={item.thumbnail} alt={item.title} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
       ) : (
-        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>
+        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 29 }}>
           {item.type === 'video' ? '▶️' : item.type === 'pdf' ? '📄' : '🖼️'}
         </div>
       )}
@@ -73,7 +73,7 @@ function Badge({ children }) {
   return (
     <span style={{
       position: 'absolute', bottom: 4, right: 4, display: 'flex', alignItems: 'center', gap: 2,
-      padding: '2px 4px', borderRadius: 4, color: '#fff', fontSize: 9, fontWeight: 600,
+      padding: '2px 4px', borderRadius: 4, color: '#fff', fontSize: 10, fontWeight: 600,
       background: 'rgba(15,15,15,0.55)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
     }}>
       {children}

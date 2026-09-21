@@ -17,15 +17,15 @@ export default function TeacherWhatsApp({ teacher }) {
           width: 44, height: 44, borderRadius: 16, flexShrink: 0, color: '#fff',
           background: 'linear-gradient(45deg, #1E40AF, #3B82F6)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: 'var(--tt-font-heading)', fontWeight: 700, fontSize: 14,
+          fontFamily: 'var(--tt-font-heading)', fontWeight: 700, fontSize: 15,
         }}>
           {initials}
         </div>
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#94A3B8' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#94A3B8' }}>
             Classroom Lead
           </div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>
             {teacher.title || 'Ms.'} {teacher.name}
           </div>
         </div>
@@ -38,7 +38,7 @@ export default function TeacherWhatsApp({ teacher }) {
           display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0,
           background: 'var(--tt-whatsapp)', color: '#fff',
           padding: '10px 14px', borderRadius: 16, textDecoration: 'none',
-          fontSize: 12, fontWeight: 700, boxShadow: '0 6px 12px -4px rgba(16,185,129,.35)',
+          fontSize: 13, fontWeight: 700, boxShadow: '0 6px 12px -4px rgba(16,185,129,.35)',
         }}
       >
         <WhatsAppIcon />

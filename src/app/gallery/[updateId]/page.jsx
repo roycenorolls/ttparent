@@ -15,7 +15,7 @@ export default function FullscreenViewer() {
 
   if (!update) return (
     <div style={{ background: '#000', minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ color: '#fff', fontSize: 14 }}>Loading…</div>
+      <div style={{ color: '#fff', fontSize: 15 }}>Loading…</div>
     </div>
   );
 
@@ -30,10 +30,10 @@ export default function FullscreenViewer() {
     <div style={{ background: '#000', minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
       {/* Top bar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 16px', paddingTop: 'calc(16px + env(safe-area-inset-top))' }}>
-        <button onClick={() => router.back()} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tt-bg)', fontSize: 22, padding: 0 }}>
+        <button onClick={() => router.back()} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tt-bg)', fontSize: 23, padding: 0 }}>
           ←
         </button>
-        <span style={{ color: 'var(--tt-bg)', fontSize: 13, fontWeight: 500 }}>
+        <span style={{ color: 'var(--tt-bg)', fontSize: 14, fontWeight: 500 }}>
           {media.length > 1 ? `${mediaIdx + 1} of ${media.length}` : update.title}
         </span>
         <div style={{ width: 22 }} />
@@ -51,7 +51,7 @@ export default function FullscreenViewer() {
             allowFullScreen
           />
         ) : (
-          <div style={{ color: 'var(--tt-bg)', fontSize: 48 }}>📄</div>
+          <div style={{ color: 'var(--tt-bg)', fontSize: 49 }}>📄</div>
         )}
       </div>
 
@@ -70,8 +70,8 @@ export default function FullscreenViewer() {
 
       {/* Caption */}
       <div style={{ padding: '8px 16px' }}>
-        <div style={{ color: 'var(--tt-bg)', fontSize: 13, fontWeight: 500 }}>{update.title}</div>
-        <div style={{ color: 'rgba(253,246,238,0.6)', fontSize: 11, marginTop: 2 }}>
+        <div style={{ color: 'var(--tt-bg)', fontSize: 14, fontWeight: 500 }}>{update.title}</div>
+        <div style={{ color: 'rgba(253,246,238,0.6)', fontSize: 12, marginTop: 2 }}>
           {new Date(update.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'long' })}
           {teacher ? ` · Posted by ${teacher.title || 'Ms.'} ${teacher.name?.split(' ')[0]}` : ''}
         </div>
@@ -82,7 +82,7 @@ export default function FullscreenViewer() {
         {waLink && (
           <a href={waLink} target="_blank" rel="noopener noreferrer" style={{
             flex: 1, background: 'var(--tt-whatsapp)', color: '#fff', textDecoration: 'none',
-            padding: '10px 0', borderRadius: 12, textAlign: 'center', fontSize: 14, fontWeight: 500,
+            padding: '10px 0', borderRadius: 12, textAlign: 'center', fontSize: 15, fontWeight: 500,
           }}>
             Ask {teacher?.title || 'Ms.'} {teacher?.name?.split(' ')[0]}
           </a>
@@ -90,7 +90,7 @@ export default function FullscreenViewer() {
         {current?.file_path && !current.file_path.startsWith('stream:') && (
           <a href={current.file_path} download target="_blank" rel="noopener noreferrer" style={{
             flex: 1, background: 'rgba(255,255,255,0.15)', color: 'var(--tt-bg)', textDecoration: 'none',
-            padding: '10px 0', borderRadius: 12, textAlign: 'center', fontSize: 14, fontWeight: 500,
+            padding: '10px 0', borderRadius: 12, textAlign: 'center', fontSize: 15, fontWeight: 500,
           }}>
             ↓ Save
           </a>

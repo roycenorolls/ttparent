@@ -44,10 +44,10 @@ export default function GalleryPage() {
         <ChildSwitcher children={children} activeId={activeId} onChange={setActiveId} style={{ marginBottom: 12 }} />
 
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-          <h1 style={{ margin: 0, fontFamily: 'var(--tt-font-heading)', fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em', color: '#000', lineHeight: 1 }}>
+          <h1 style={{ margin: 0, fontFamily: 'var(--tt-font-heading)', fontSize: 29, fontWeight: 800, letterSpacing: '-0.02em', color: '#000', lineHeight: 1 }}>
             Photos
           </h1>
-          {!loading && <span style={{ fontSize: 12, fontWeight: 500, color: '#8E8E93' }}>{count} {count === 1 ? 'Item' : 'Items'}</span>}
+          {!loading && <span style={{ fontSize: 13, fontWeight: 500, color: '#8E8E93' }}>{count} {count === 1 ? 'Item' : 'Items'}</span>}
         </div>
 
         {/* Segmented control */}
@@ -63,7 +63,7 @@ export default function GalleryPage() {
                 onClick={() => setFilter(f.key)}
                 style={{
                   flex: 1, padding: '5px 0', border: 'none', borderRadius: 7, cursor: 'pointer',
-                  fontFamily: 'inherit', fontSize: 12, fontWeight: on ? 700 : 600,
+                  fontFamily: 'inherit', fontSize: 13, fontWeight: on ? 700 : 600,
                   background: on ? '#fff' : 'transparent',
                   color: on ? '#000' : '#64748B',
                   boxShadow: on ? '0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04)' : 'none',

@@ -38,7 +38,7 @@ export default function SettingsPage() {
       <div style={{ padding: '12px 16px 0' }}>
       </div>
 
-      <div style={{ padding: '0 16px 16px', fontSize: 12, color: 'var(--tt-muted)', lineHeight: 1.5 }}>
+      <div style={{ padding: '0 16px 16px', fontSize: 13, color: 'var(--tt-muted)', lineHeight: 1.5 }}>
         When enabled, your child's existing registration photo is used to suggest
         which photos they appear in on new class posts — teachers always review
         and confirm every suggestion before it's shown to anyone. You can turn
@@ -46,13 +46,13 @@ export default function SettingsPage() {
       </div>
 
       {error && (
-        <div style={{ margin: '0 16px 12px', padding: '10px 12px', background: 'var(--tt-red-tint)', color: 'var(--tt-red-text)', borderRadius: 8, fontSize: 12 }}>
+        <div style={{ margin: '0 16px 12px', padding: '10px 12px', background: 'var(--tt-red-tint)', color: 'var(--tt-red-text)', borderRadius: 8, fontSize: 13 }}>
           {error}
         </div>
       )}
 
       <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {children === null && <div style={{ fontSize: 13, color: 'var(--tt-muted)' }}>Loading…</div>}
+        {children === null && <div style={{ fontSize: 14, color: 'var(--tt-muted)' }}>Loading…</div>}
 
         {children?.map(child => {
           const restricted = child.photo_restriction === 'yes';
@@ -64,11 +64,11 @@ export default function SettingsPage() {
               borderRadius: 'var(--tt-radius)', padding: '12px 14px',
             }}>
               <div>
-                <div style={{ fontSize: 14, color: 'var(--tt-text)', fontWeight: 500 }}>
+                <div style={{ fontSize: 15, color: 'var(--tt-text)', fontWeight: 500 }}>
                   {child.firstname} {child.lastname}
                 </div>
                 {restricted && (
-                  <div style={{ fontSize: 11, color: 'var(--tt-muted)', marginTop: 2 }}>
+                  <div style={{ fontSize: 12, color: 'var(--tt-muted)', marginTop: 2 }}>
                     Photo use is restricted for this child — face matching isn't available.
                   </div>
                 )}

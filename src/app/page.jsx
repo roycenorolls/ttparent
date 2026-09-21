@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react';
 import { getGreeting } from '@/lib/time';
 import { api } from '@/lib/api';
 import ChildSwitcher  from '@/components/ChildSwitcher';
-import CheckInCard    from '@/components/CheckInCard';
-import HappeningNow   from '@/components/HappeningNow';
+import DayTimeline    from '@/components/DayTimeline';
 import UpdatesFeed    from '@/components/UpdatesFeed';
 import TeacherWhatsApp from '@/components/TeacherWhatsApp';
 
@@ -15,7 +14,6 @@ export default function HomePage() {
   const [activeId, setActiveId] = useState(null);
   const [child,    setChild]    = useState(null);
   const [status,   setStatus]   = useState(null);
-  const [slots,    setSlots]    = useState([]);
   const [updates,  setUpdates]  = useState([]);
   const [error,    setError]    = useState(null);
 
@@ -45,10 +43,14 @@ export default function HomePage() {
         setStatus(data.status);
       })
       .catch(() => {});
-    api.scheduleToday(activeId)
-      .then(data => setSlots(data.slots || []))
-      .catch(() => {});
   }, [activeId]);
+
+  // This child's posts (class-wide ones included), split into today and earlier.
+  const mine    = updates.filter(u => !u.child_ids?.length || u.child_ids.includes(activeId));
+  const today   = new Date().toDateString();
+  const isToday = u => new Date(u.created_at).toDateString() === today;
+  const todays  = mine.filter(isToday);
+  const earlier = mine.filter(u => !isToday(u));
 
   if (error) {
     return (
@@ -63,19 +65,18 @@ export default function HomePage() {
       {/* Greeting */}
       <div style={{ padding: '4px 20px 0' }}>
         <div style={{
-          margin: 0, fontFamily: 'var(--tt-font-heading)', fontSize: 24, fontWeight: 800,
+          margin: 0, fontFamily: 'var(--tt-font-heading)', fontSize: 25, fontWeight: 800,
           letterSpacing: '-0.02em', color: '#0F172A',
         }}>
           {greeting.text}
           {parent?.name && <>, <span style={{ color: 'var(--tt-cobalt)' }}>{parent.title || 'Ms.'} {parent.name.split(' ')[0]}</span></>}
         </div>
-        <div style={{ fontSize: 14, color: '#64748B', fontWeight: 500, marginTop: 2 }}>{greeting.sub}</div>
+        <div style={{ fontSize: 15, color: '#64748B', fontWeight: 500, marginTop: 2 }}>{greeting.sub}</div>
       </div>
 
       <ChildSwitcher children={children} activeId={activeId} onChange={setActiveId} style={{ padding: '0 16px' }} />
-      <CheckInCard child={child} status={status} />
-      <HappeningNow slots={slots} />
-      <UpdatesFeed updates={updates.filter(u => !u.child_ids?.length || u.child_ids.includes(activeId))} />
+      <DayTimeline child={child} status={status} updates={todays} />
+      <UpdatesFeed title="Earlier updates" updates={earlier} />
       {child?.teacher && <TeacherWhatsApp teacher={child.teacher} />}
     </div>
   );

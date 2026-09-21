@@ -100,11 +100,11 @@ export default function SchedulePage() {
             {/* Day strip */}
             <div style={{ background: '#fff', border: `1px solid ${LINE}`, borderRadius: 32, padding: 12, boxShadow: '0 4px 16px rgba(10,58,130,0.04)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 4px 8px' }}>
-                <span style={{ fontFamily: 'var(--tt-font-heading)', fontSize: 15, fontWeight: 700, color: '#131B2E' }}>
+                <span style={{ fontFamily: 'var(--tt-font-heading)', fontSize: 16, fontWeight: 700, color: '#131B2E' }}>
                   📅 {monday?.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                 </span>
                 {monday && (
-                  <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', padding: '2px 8px', borderRadius: 999, background: '#FFF3D6', color: '#8C5300' }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', padding: '2px 8px', borderRadius: 999, background: '#FFF3D6', color: '#8C5300' }}>
                     WEEK {isoWeek(monday)}
                   </span>
                 )}
@@ -120,10 +120,10 @@ export default function SchedulePage() {
 
             {/* Timeline */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 4px' }}>
-              <h2 style={{ margin: 0, fontFamily: 'var(--tt-font-heading)', fontSize: 17, fontWeight: 700, color: '#131B2E' }}>
+              <h2 style={{ margin: 0, fontFamily: 'var(--tt-font-heading)', fontSize: 18, fontWeight: 700, color: '#131B2E' }}>
                 {isToday ? "Today's Timeline" : `${day ? parseDate(day.date).toLocaleDateString('en-US', { weekday: 'long' }) : ''}'s Timeline`}
               </h2>
-              <span style={{ fontSize: 12, fontWeight: 500, color: MUTED }}>
+              <span style={{ fontSize: 13, fontWeight: 500, color: MUTED }}>
                 {day?.slots.length || 0} Activities
               </span>
             </div>
@@ -167,10 +167,10 @@ function DayCell({ day, on, isToday, onClick }) {
       border: on ? 'none' : `1px solid ${isToday ? NAVY : LINE}`,
       boxShadow: on ? '0 4px 10px rgba(10,58,130,.25)' : '0 1px 2px rgba(0,0,0,.04)',
     }}>
-      <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: on ? 'rgba(255,255,255,.8)' : MUTED }}>
+      <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: on ? 'rgba(255,255,255,.8)' : MUTED }}>
         {WEEKDAYS[date.getDay()]}
       </span>
-      <span style={{ fontFamily: 'var(--tt-font-heading)', fontSize: 18, fontWeight: 700, margin: '2px 0' }}>{date.getDate()}</span>
+      <span style={{ fontFamily: 'var(--tt-font-heading)', fontSize: 19, fontWeight: 700, margin: '2px 0' }}>{date.getDate()}</span>
       <span style={{ display: 'flex', gap: 2, height: 6 }}>
         {Array.from({ length: dots }, (_, i) => (
           <span key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: on ? (i % 2 ? '#E53935' : '#FFC72C') : '#D4CDBC' }} />
@@ -193,24 +193,24 @@ function HappeningNow({ slots }) {
     }}>
       <div style={{ position: 'absolute', right: -24, bottom: -24, width: 144, height: 144, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,199,44,.18) 0%, transparent 70%)' }} />
       <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 999, background: '#FFC72C', color: NAVY, fontSize: 11, fontWeight: 700, letterSpacing: '0.06em' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 999, background: '#FFC72C', color: NAVY, fontSize: 12, fontWeight: 700, letterSpacing: '0.06em' }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: NAVY }} />
           HAPPENING NOW
         </span>
-        <span style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,.9)' }}>
+        <span style={{ fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,.9)' }}>
           {formatTime(current.start_time)} – {formatTime(current.end_time)}
         </span>
       </div>
       <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontFamily: 'var(--tt-font-heading)', fontSize: 19, fontWeight: 700, lineHeight: 1.25 }}>{current.activity}</div>
+          <div style={{ fontFamily: 'var(--tt-font-heading)', fontSize: 20, fontWeight: 700, lineHeight: 1.25 }}>{current.activity}</div>
           {current.description && (
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,.85)', marginTop: 4, lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+            <div style={{ fontSize: 14, color: 'rgba(255,255,255,.85)', marginTop: 4, lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
               {current.description}
             </div>
           )}
         </div>
-        <div style={{ width: 48, height: 48, borderRadius: 16, flexShrink: 0, background: 'rgba(255,255,255,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>
+        <div style={{ width: 48, height: 48, borderRadius: 16, flexShrink: 0, background: 'rgba(255,255,255,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 25 }}>
           {kind.icon}
         </div>
       </div>
@@ -227,7 +227,7 @@ function TimelineItem({ slot, state }) {
     <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
       <div style={{
         position: 'relative', zIndex: 1, width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
         background: now ? NAVY : done ? '#fff' : kind.bg,
         border: done ? `1px solid ${LINE}` : 'none',
         boxShadow: now ? '0 0 0 4px #FFF3D6' : '0 1px 2px rgba(0,0,0,.05)',
@@ -247,7 +247,7 @@ function TimelineItem({ slot, state }) {
             {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
           </span>
           <span style={{
-            fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
+            fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
             padding: '2px 8px', borderRadius: 999, whiteSpace: 'nowrap',
             ...(now  ? { background: NAVY, color: '#fff' }
               : done ? { background: '#E8F5E9', color: '#2E7D32' }
@@ -260,7 +260,7 @@ function TimelineItem({ slot, state }) {
           {slot.activity}
         </div>
         {slot.description && (
-          <div style={{ fontSize: 12, color: '#6B6355', marginTop: 2, lineHeight: 1.45 }}>{slot.description}</div>
+          <div style={{ fontSize: 13, color: '#6B6355', marginTop: 2, lineHeight: 1.45 }}>{slot.description}</div>
         )}
       </div>
     </div>
@@ -269,7 +269,7 @@ function TimelineItem({ slot, state }) {
 
 function Message({ children }) {
   return (
-    <div style={{ padding: '32px 16px', textAlign: 'center', color: MUTED, fontSize: 14 }}>
+    <div style={{ padding: '32px 16px', textAlign: 'center', color: MUTED, fontSize: 15 }}>
       {children}
     </div>
   );

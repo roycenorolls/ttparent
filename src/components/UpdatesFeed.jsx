@@ -10,7 +10,8 @@ function initials(name) {
 
 function PostCard({ u }) {
   const date = new Date(u.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
-  const isText = !u.thumbnail;
+  const photo = u.image || u.thumbnail;
+  const isText = !photo;
 
   return (
     <article style={{
@@ -39,7 +40,7 @@ function PostCard({ u }) {
         {!isText && (
           <div style={{ position: 'relative', width: '100%', aspectRatio: '4 / 5', background: 'var(--tt-blue-tint)' }}>
             <img
-              src={u.thumbnail}
+              src={photo}
               alt={u.title}
               loading="lazy"
               style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}

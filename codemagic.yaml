@@ -7,8 +7,7 @@ workflows:
     environment:
       flutter: stable
       vars:
-        # Set APP_URL in the Codemagic UI (HTTPS, e.g. a Vercel preview URL).
-        APP_URL: https://example.invalid
+        APP_URL: https://ttparent.vercel.app
     scripts:
       - name: Get packages
         script: flutter pub get

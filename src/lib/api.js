@@ -36,5 +36,6 @@ export const api = {
     method: 'PATCH',
     body: JSON.stringify({ consent }),
   }),
-  logout:        ()   => apiFetch('/auth/logout', { method: 'POST' }),
+  // Not via the /api/tt proxy: the cookie has to be cleared server-side.
+  logout:        ()   => fetch('/api/auth/logout', { method: 'POST' }),
 };

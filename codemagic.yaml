@@ -1,4 +1,70 @@
 workflows:
+  shell-ios-device:
+    name: Shell (iOS signed device build - Ad Hoc)
+    instance_type: mac_mini_m2
+    max_build_duration: 30
+    working_directory: shell
+    integrations:
+      app_store_connect: codemagic
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      ios_signing:
+        distribution_type: ad_hoc
+        bundle_identifier: com.tutortime.parentShell
+      vars:
+        APP_URL: https://ttparent.vercel.app
+    scripts:
+      - name: Get packages
+        script: flutter pub get
+      - name: Set up code signing
+        script: |
+          xcode-project use-profiles
+      - name: Build signed IPA
+        script: |
+          flutter build ipa --release \
+            --dart-define=APP_URL=$APP_URL \
+            --export-options-plist=/Users/builder/export_options.plist
+    artifacts:
+      - $CM_BUILD_DIR/shell/build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+
+  shell-testflight:
+    name: Shell (iOS TestFlight)
+    instance_type: mac_mini_m2
+    max_build_duration: 30
+    working_directory: shell
+    integrations:
+      app_store_connect: codemagic
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.tutortime.parentShell
+      vars:
+        APP_URL: https://ttparent.vercel.app
+    scripts:
+      - name: Get packages
+        script: flutter pub get
+      - name: Set up code signing
+        script: |
+          xcode-project use-profiles
+      - name: Build signed IPA
+        script: |
+          flutter build ipa --release \
+            --dart-define=APP_URL=$APP_URL \
+            --export-options-plist=/Users/builder/export_options.plist
+    artifacts:
+      - $CM_BUILD_DIR/shell/build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+
   shell-simulator:
     name: Shell (iOS simulator + Android debug)
     instance_type: mac_mini_m2

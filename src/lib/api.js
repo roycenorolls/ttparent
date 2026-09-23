@@ -23,7 +23,7 @@ async function apiFetch(path, options = {}) {
 export const api = {
   childProfile:  (id) => apiFetch(`/parent/child/${id}`),
   scheduleWeek:  (id) => apiFetch(`/parent/child/${id}/schedule/week`),
-  updates:       ()   => apiFetch('/parent/updates'),
+  updates:       (all) => apiFetch(all ? '/parent/updates?all=1' : '/parent/updates'),
   updateDetail:  (id) => apiFetch(`/parent/updates/${id}`),
   toggleLike:    (id) => apiFetch(`/parent/updates/${id}/like`, { method: 'POST' }),
   comments:      (id) => apiFetch(`/parent/updates/${id}/comments`),

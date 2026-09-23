@@ -3,7 +3,7 @@ import AppHeader from '@/components/AppHeader';
 import ChildSwitcher from '@/components/ChildSwitcher';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import GalleryGrid, { visibleItems } from '@/components/GalleryGrid';
+import GalleryGrid, { visibleItems, expandMedia } from '@/components/GalleryGrid';
 
 const FILTERS = [
   { key: 'all',     label: 'All' },
@@ -20,7 +20,7 @@ export default function GalleryPage() {
   const [loading,  setLoading]  = useState(true);
 
   useEffect(() => {
-    api.updates()
+    api.updates(true)
       .then(d => setUpdates(d.updates || []))
       .finally(() => setLoading(false));
 
@@ -32,7 +32,7 @@ export default function GalleryPage() {
       .catch(() => {});
   }, []);
 
-  const count  = visibleItems(updates, filter, activeId).length;
+  const count  = expandMedia(visibleItems(updates, filter, activeId)).length;
 
   return (
     <div style={{ background: '#fff', minHeight: '100dvh' }}>

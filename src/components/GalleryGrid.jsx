@@ -9,8 +9,19 @@ export function visibleItems(updates, filter, activeId) {
     .filter(u => !u.child_ids?.length || u.child_ids.includes(activeId));
 }
 
+// One tile per media item, so a post with several photos shows all of them.
+export function expandMedia(posts) {
+  return posts.flatMap(p => {
+    if (p.type === 'pdf' || !p.media?.length) return [p];
+    return p.media.map((m, i) => ({
+      ...p, id: p.id, key: `${p.id}-${m.id}`, thumbnail: m.thumbnail,
+      type: p.type === 'video' || m.type === 'video' ? 'video' : 'photo', index: i,
+    }));
+  });
+}
+
 export default function GalleryGrid({ updates, filter, activeId }) {
-  const items = visibleItems(updates, filter, activeId);
+  const items = expandMedia(visibleItems(updates, filter, activeId));
 
   if (!items.length) {
     return (
@@ -37,7 +48,7 @@ export default function GalleryGrid({ updates, filter, activeId }) {
             </span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2, padding: '2px 2px 0' }}>
-            {items.map(item => <Tile key={item.id} item={item} />)}
+            {items.map(item => <Tile key={item.key || item.id} item={item} />)}
           </div>
         </section>
       ))}

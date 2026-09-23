@@ -12,7 +12,9 @@ async function saveInBrowser(url) {
     const res = await fetch(url);
     if (!res.ok) throw new Error(res.status);
     const blob = await res.blob();
-    const name = decodeURIComponent(url.split('/').pop().split('?')[0]) || 'photo';
+    // Cloudflare Images URLs end in the variant name ("public"), not a filename.
+    const ext = (blob.type.split('/')[1] || 'jpg').replace('jpeg', 'jpg');
+    const name = `tutortime-${Date.now()}.${ext}`;
     const file = new File([blob], name, { type: blob.type });
     if (navigator.canShare?.({ files: [file] })) {
       await navigator.share({ files: [file] });
@@ -56,7 +58,7 @@ export default function FullscreenViewer() {
     : (teacher ? 'https://api.whatsapp.com/send/' : null);
 
   return (
-    <div className="tt-viewer" style={{ background: '#000', minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ background: '#000', minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
       {/* Top bar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 16px', paddingTop: 'calc(16px + env(safe-area-inset-top))' }}>
         <button onClick={() => router.back()} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tt-bg)', fontSize: 23, padding: 0 }}>

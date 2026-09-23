@@ -15,9 +15,6 @@ export default function BottomNav() {
 
   // Sign-in is a full-bleed screen with nowhere to navigate to yet.
   if (path === '/login') return null;
-  // The fullscreen photo viewer has its own back button and filmstrip.
-  if (path.startsWith('/gallery/')) return null;
-
   return (
     <nav style={{
       // Docked to the bottom edge like a native tab bar.

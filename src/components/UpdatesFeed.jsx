@@ -131,6 +131,8 @@ export function PostCard({ u, showDate }) {
   );
 }
 
+const REACTIONS = { heart: '❤️', thumbs: '👍', pray: '🙏' };
+
 // Light for the feed cards, dark for the fullscreen photo viewer.
 const THEMES = {
   light: {
@@ -140,6 +142,7 @@ const THEMES = {
     input: { border: '1px solid #EAE3D2', background: '#fff', color: 'inherit' },
     send: { background: '#0A3A82', color: '#fff' },
     bar: '16px 24px 22px', panel: '16px 24px 22px',
+    reply: '#E8F0FB', replyName: '#0A3A82', chip: '#fff',
   },
   dark: {
     pill: 'rgba(255,255,255,0.15)', pillInk: '#FDF6EE', likedBg: 'rgba(244,63,94,0.28)', likedInk: '#FDA4AF',
@@ -148,6 +151,7 @@ const THEMES = {
     input: { border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.08)', color: '#fff' },
     send: { background: '#FDF6EE', color: '#0A3A82' },
     bar: '4px 16px 12px', panel: '12px 16px 16px',
+    reply: 'rgba(147,197,253,0.18)', replyName: '#BFDBFE', chip: 'rgba(255,255,255,0.14)',
   },
 };
 
@@ -165,6 +169,8 @@ export function Engagement({ u, time, dark }) {
   const [likes, setLikes] = useState(u.like_count || 0);
   const [mine,  setMine]  = useState(u.comment_count || 0);
   const [open,  setOpen]  = useState(false);
+  const [opened, setOpened] = useState(false);
+  const hasReply = (u.reply_count || 0) > 0 && !opened;
 
   const toggleLike = () => {
     const was = liked, prev = likes;
@@ -180,8 +186,9 @@ export function Engagement({ u, time, dark }) {
         <button onClick={toggleLike} aria-pressed={liked} aria-label={liked ? 'Unlike' : 'Like'} style={pill(T, liked)}>
           <HeartIcon filled={liked} />{likes}
         </button>
-        <button onClick={() => setOpen(o => !o)} aria-expanded={open} style={pill(T, false)}>
+        <button onClick={() => { setOpen(o => !o); setOpened(true); }} aria-expanded={open} style={pill(T, false)}>
           <CommentIcon />{mine > 0 ? `Comment · ${mine}` : 'Comment'}
+          {hasReply && <span aria-label="Teacher replied" style={{ width: 8, height: 8, borderRadius: 999, background: '#E11D48' }} />}
         </button>
         {time && <span style={{ marginLeft: 'auto', fontSize: 14, color: T.time, fontWeight: 500, flexShrink: 0 }}>{time}</span>}
       </div>
@@ -216,10 +223,21 @@ function CommentPanel({ T, updateId, onAdded }) {
       <div style={{ fontSize: 12, color: T.note, marginBottom: 10 }}>
         🔒 Only the teachers can read your comments.
       </div>
-      {(items || []).map(c => (
+      {(items || []).map(c => c.author === 'teacher' ? (
+        <div key={c.id} style={{ background: T.reply, borderRadius: 18, padding: '10px 14px', marginBottom: 8, marginLeft: 28 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: T.replyName, marginBottom: 2 }}>{c.teacher_name}</div>
+          <div style={{ fontSize: 14, color: T.bubbleInk, lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{c.body}</div>
+          <div style={{ fontSize: 11, color: T.meta, marginTop: 4 }}>{shortDate(c.created_at)} · {clock(c.created_at)}</div>
+        </div>
+      ) : (
         <div key={c.id} style={{ background: T.bubble, borderRadius: 18, padding: '10px 14px', marginBottom: 8 }}>
           <div style={{ fontSize: 14, color: T.bubbleInk, lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{c.body}</div>
           <div style={{ fontSize: 11, color: T.meta, marginTop: 4 }}>{shortDate(c.created_at)} · {clock(c.created_at)}</div>
+          {REACTIONS[c.reaction] && (
+            <span style={{ display: 'inline-block', marginTop: 6, fontSize: 12, background: T.chip, color: T.bubbleInk, borderRadius: 999, padding: '2px 10px' }}>
+              {REACTIONS[c.reaction]} from your teacher
+            </span>
+          )}
         </div>
       ))}
       <form onSubmit={send} style={{ display: 'flex', gap: 8, marginTop: 4 }}>

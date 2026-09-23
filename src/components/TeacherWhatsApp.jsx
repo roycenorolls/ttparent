@@ -5,7 +5,7 @@ export default function TeacherWhatsApp({ teacher }) {
   // teacher's personal mobile, just let the parent open WhatsApp themselves.
   const waLink = teacher.phone
     ? `https://wa.me/62${teacher.phone.replace(/\D/g, '').replace(/^0/, '').replace(/^62/, '')}`
-    : 'https://api.whatsapp.com/send/';
+    : 'whatsapp://';
 
   const initials = (teacher.name || 'T').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('');
 

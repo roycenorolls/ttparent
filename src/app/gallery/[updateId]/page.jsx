@@ -80,7 +80,7 @@ export default function FullscreenViewer() {
   // teacher's personal mobile, just let the parent open WhatsApp themselves.
   const waLink  = teacher?.phone
     ? `https://wa.me/62${teacher.phone.replace(/\D/g, '').replace(/^0/, '').replace(/^62/, '')}`
-    : (teacher ? 'https://api.whatsapp.com/send/' : null);
+    : (teacher ? 'whatsapp://' : null);
 
   return (
     <div style={{

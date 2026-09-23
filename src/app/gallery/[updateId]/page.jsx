@@ -83,7 +83,11 @@ export default function FullscreenViewer() {
     : (teacher ? 'https://api.whatsapp.com/send/' : null);
 
   return (
-    <div style={{ background: '#000', minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{
+      // Exactly the space above the docked nav, so the buttons never slide behind it.
+      background: '#000', height: 'calc(100dvh - 70px - env(safe-area-inset-bottom))', overflow: 'hidden',
+      display: 'flex', flexDirection: 'column',
+    }}>
       {/* Top bar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 16px', paddingTop: 'calc(16px + env(safe-area-inset-top))' }}>
         <button onClick={() => router.back()} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tt-bg)', fontSize: 23, padding: 0 }}>
@@ -106,7 +110,7 @@ export default function FullscreenViewer() {
         style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 16px', minHeight: 0, touchAction: 'pan-y' }}
       >
         {current?.file_type?.startsWith('image') ? (
-          <img src={current.file_path} alt={update.title} style={{ maxWidth: '100%', maxHeight: '60dvh', objectFit: 'contain', borderRadius: 8 }} />
+          <img src={current.file_path} alt={update.title} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: 8 }} />
         ) : current?.file_path?.startsWith('stream:') ? (
           <iframe
             src={`https://iframe.videodelivery.net/${current.file_path.replace('stream:', '')}`}
@@ -153,7 +157,7 @@ export default function FullscreenViewer() {
       <Engagement u={update} dark />
 
       {/* Actions */}
-      <div style={{ display: 'flex', gap: 10, padding: '12px 16px', paddingBottom: 'calc(16px + env(safe-area-inset-bottom))' }}>
+      <div style={{ display: 'flex', gap: 10, padding: '12px 16px' }}>
         {waLink && (
           <a href={waLink} target="_blank" rel="noopener noreferrer" style={{
             flex: 1, background: 'var(--tt-whatsapp)', color: '#fff', textDecoration: 'none',

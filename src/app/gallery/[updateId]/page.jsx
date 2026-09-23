@@ -39,12 +39,10 @@ export default function FullscreenViewer() {
   const [details, setDetails] = useState({});
   const touchX = useRef(0);
   const [landscape, setLandscape] = useState(false);
-  const [exited, setExited] = useState(false); // ✕ tapped: show the normal viewer until the next rotation
-
   // Rotating the phone sideways turns an image into a full-screen view.
   useEffect(() => {
     const mq = window.matchMedia('(orientation: landscape) and (max-height: 500px)');
-    const sync = () => { setLandscape(mq.matches); setExited(false); };
+    const sync = () => setLandscape(mq.matches);
     sync();
     mq.addEventListener('change', sync);
     return () => mq.removeEventListener('change', sync);
@@ -102,17 +100,12 @@ export default function FullscreenViewer() {
     },
   };
 
-  if (landscape && !exited && current?.file_type?.startsWith('image')) return (
+  if (landscape && current?.file_type?.startsWith('image')) return (
     <div {...swipe} style={{
       position: 'fixed', inset: 0, zIndex: 1000, background: '#000', touchAction: 'pan-y',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
       <img src={current.file_path} alt={update.title} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-      <button onClick={() => setExited(true)} aria-label="Exit full screen" style={{
-        position: 'absolute', top: 'calc(8px + env(safe-area-inset-top))', right: 'calc(8px + env(safe-area-inset-right))',
-        width: 32, height: 32, borderRadius: 16, border: 'none', cursor: 'pointer',
-        background: 'rgba(0,0,0,0.5)', color: '#fff', fontSize: 16, lineHeight: '32px', padding: 0,
-      }}>✕</button>
     </div>
   );
 

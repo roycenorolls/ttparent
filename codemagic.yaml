@@ -86,3 +86,20 @@ workflows:
     artifacts:
       - $CM_BUILD_DIR/shell/build/ios/iphonesimulator/Runner-simulator.zip
       - $CM_BUILD_DIR/shell/build/app/outputs/flutter-apk/app-debug.apk
+
+  shell-android-release:
+    name: Shell (Android release APK)
+    instance_type: linux_x2
+    max_build_duration: 30
+    working_directory: shell
+    environment:
+      flutter: stable
+      vars:
+        APP_URL: https://ttparent.vercel.app
+    scripts:
+      - name: Get packages
+        script: flutter pub get
+      - name: Build release APKs (one per ABI)
+        script: flutter build apk --release --split-per-abi --dart-define=APP_URL=$APP_URL
+    artifacts:
+      - $CM_BUILD_DIR/shell/build/app/outputs/flutter-apk/*.apk

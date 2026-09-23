@@ -15,25 +15,19 @@ export default function BottomNav() {
 
   // Sign-in is a full-bleed screen with nowhere to navigate to yet.
   if (path === '/login') return null;
+  // The fullscreen photo viewer has its own back button and filmstrip.
+  if (path.startsWith('/gallery/')) return null;
 
   return (
     <nav style={{
-      position: 'fixed', left: '50%', transform: 'translateX(-50%)',
-      bottom: 'calc(16px + env(safe-area-inset-bottom))',
-      width: '92%', maxWidth: 400, zIndex: 100,
-      // Liquid glass: a translucent, saturated blur with a bright top rim,
-      // a soft inner glow and a sheen gradient so content shows through.
-      background: 'linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.28) 100%)',
+      // Docked to the bottom edge like a native tab bar.
+      position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 100,
+      background: 'rgba(255,255,255,0.85)',
       backdropFilter: 'blur(22px) saturate(180%)', WebkitBackdropFilter: 'blur(22px) saturate(180%)',
-      border: '1px solid rgba(255,255,255,0.6)', borderRadius: 999,
-      boxShadow: [
-        'inset 0 1px 0 rgba(255,255,255,0.9)',
-        'inset 0 -1px 0 rgba(255,255,255,0.25)',
-        'inset 0 0 12px rgba(255,255,255,0.35)',
-        '0 12px 32px -6px rgba(10,58,130,0.18)',
-        '0 2px 6px rgba(15,23,42,0.06)',
-      ].join(', '),
-      display: 'flex', alignItems: 'center', gap: 4, padding: 6,
+      borderTop: '1px solid rgba(15,23,42,0.08)',
+      display: 'flex', alignItems: 'center', gap: 4,
+      padding: '6px max(6px, calc((100% - 400px) / 2))',
+      paddingBottom: 'calc(6px + env(safe-area-inset-bottom))',
     }}>
       {tabs.map(({ href, label, icon: Icon }) => {
         const active = path === href || (href !== '/' && path.startsWith(href));

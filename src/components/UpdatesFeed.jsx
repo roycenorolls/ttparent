@@ -204,7 +204,19 @@ function CommentPanel({ T, updateId, onAdded }) {
   const [error,   setError]   = useState(null);
 
   useEffect(() => {
-    api.comments(updateId).then(d => setItems(d.comments || [])).catch(() => setItems([]));
+    const fetchComments = () => api.comments(updateId).then(d => setItems(d.comments || [])).catch(() => {});
+    fetchComments();
+
+    const interval = setInterval(fetchComments, 8000);
+    const onFocus = () => fetchComments();
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onFocus);
+    };
   }, [updateId]);
 
   const send = e => {

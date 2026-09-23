@@ -57,7 +57,7 @@ export default function MembershipCard({ parent, children }) {
           aria-label="Open QR code"
           style={{ position: 'relative', background: '#fff', padding: 8, borderRadius: 16, boxShadow: '0 4px 6px rgba(0,0,0,.12)', flexShrink: 0, border: 'none', cursor: 'pointer', font: 'inherit' }}
         >
-          <canvas ref={qrRef} style={{ display: 'block', borderRadius: 8 }} />
+          <canvas ref={qrRef} width={56} height={56} style={{ display: 'block', width: 56, height: 56, borderRadius: 8 }} />
           <span style={{
             position: 'absolute', bottom: -8, left: -4, right: -4, textAlign: 'center',
             background: 'var(--tt-navy)', color: '#F59E0B', fontSize: 10, fontWeight: 700,

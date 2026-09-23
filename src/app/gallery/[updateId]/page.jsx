@@ -31,13 +31,66 @@ async function saveInBrowser(url) {
   }
 }
 
+// Pinch to zoom, drag to pan while zoomed, double-tap to toggle 2.5x. At 1x a
+// horizontal drag is a swipe to the next/previous photo. Reset on `resetKey`.
+function useZoom(onSwipe, resetKey) {
+  const [t, setT] = useState({ s: 1, x: 0, y: 0 });
+  const cur = useRef(t); cur.current = t;
+  const g = useRef({});
+  const lastTap = useRef(0);
+  useEffect(() => setT({ s: 1, x: 0, y: 0 }), [resetKey]);
+
+  const dist = ts => Math.hypot(ts[0].clientX - ts[1].clientX, ts[0].clientY - ts[1].clientY);
+  const clampPan = (v, s, size) => Math.max(-(s - 1) * size / 2, Math.min((s - 1) * size / 2, v));
+
+  const handlers = {
+    onTouchStart: e => {
+      const ts = e.touches;
+      if (ts.length === 2) g.current = { mode: 'pinch', d: dist(ts), s: cur.current.s };
+      else if (ts.length === 1) {
+        g.current = { mode: 'pan', sx: ts[0].clientX, sy: ts[0].clientY, bx: cur.current.x, by: cur.current.y };
+      }
+    },
+    onTouchMove: e => {
+      const ts = e.touches, k = g.current;
+      if (k.mode === 'pinch' && ts.length === 2) {
+        const s = Math.min(5, Math.max(1, k.s * dist(ts) / k.d));
+        setT(p => s === 1 ? { s, x: 0, y: 0 } : { ...p, s });
+      } else if (k.mode === 'pan' && ts.length === 1 && cur.current.s > 1) {
+        const s = cur.current.s;
+        setT({
+          s,
+          x: clampPan(k.bx + ts[0].clientX - k.sx, s, window.innerWidth),
+          y: clampPan(k.by + ts[0].clientY - k.sy, s, window.innerHeight),
+        });
+      }
+    },
+    onTouchEnd: e => {
+      const k = g.current;
+      if (e.touches.length > 0) { g.current = { mode: 'none' }; return; } // one finger lifted mid-pinch
+      if (k.mode !== 'pan') return;
+      const dx = e.changedTouches[0].clientX - k.sx, dy = e.changedTouches[0].clientY - k.sy;
+      if (cur.current.s === 1 && Math.abs(dx) >= 40) { onSwipe(dx < 0 ? 1 : -1); return; }
+      if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
+        const now = Date.now();
+        if (now - lastTap.current < 300) {
+          setT(cur.current.s > 1 ? { s: 1, x: 0, y: 0 } : { s: 2.5, x: 0, y: 0 });
+          lastTap.current = 0;
+        } else lastTap.current = now;
+      }
+    },
+  };
+
+  const imgStyle = { transform: `translate(${t.x}px, ${t.y}px) scale(${t.s})`, touchAction: 'none' };
+  return { handlers, imgStyle, zoomed: t.s > 1 };
+}
+
 export default function FullscreenViewer() {
   const { updateId } = useParams();
   const router = useRouter();
   const [list, setList]       = useState(null); // [{u: updateId, i: index within post}] in gallery order
   const [idx, setIdx]         = useState(0);
   const [details, setDetails] = useState({});
-  const touchX = useRef(0);
   const [landscape, setLandscape] = useState(false);
   // Rotating the phone sideways turns an image into a full-screen view.
   useEffect(() => {
@@ -75,6 +128,8 @@ export default function FullscreenViewer() {
     }
   }, [update]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const zoom = useZoom(d => setIdx(i => Math.min((list?.length || 1) - 1, Math.max(0, i + d))), idx);
+
   if (!update) return (
     <div style={{ background: '#000', minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ color: '#fff', fontSize: 15 }}>Loading…</div>
@@ -91,21 +146,12 @@ export default function FullscreenViewer() {
     ? `https://wa.me/62${teacher.phone.replace(/\D/g, '').replace(/^0/, '').replace(/^62/, '')}`
     : (teacher ? 'whatsapp://' : null);
 
-  const swipe = {
-    onTouchStart: e => { touchX.current = e.touches[0].clientX; },
-    onTouchEnd: e => {
-      const dx = e.changedTouches[0].clientX - touchX.current;
-      if (Math.abs(dx) < 40) return;
-      setIdx(i => Math.min(total - 1, Math.max(0, i + (dx < 0 ? 1 : -1))));
-    },
-  };
-
   if (landscape && current?.file_type?.startsWith('image')) return (
-    <div {...swipe} style={{
-      position: 'fixed', inset: 0, zIndex: 1000, background: '#000', touchAction: 'pan-y',
+    <div {...zoom.handlers} style={{
+      position: 'fixed', inset: 0, zIndex: 1000, background: '#000', touchAction: 'none', overflow: 'hidden',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
-      <img src={current.file_path} alt={update.title} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+      <img src={current.file_path} alt={update.title} style={{ width: '100%', height: '100%', objectFit: 'contain', ...zoom.imgStyle }} />
     </div>
   );
 
@@ -128,11 +174,11 @@ export default function FullscreenViewer() {
 
       {/* Media */}
       <div
-        {...swipe}
-        style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 16px', minHeight: 0, touchAction: 'pan-y' }}
+        {...zoom.handlers}
+        style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 16px', minHeight: 0, touchAction: 'none', overflow: 'hidden' }}
       >
         {current?.file_type?.startsWith('image') ? (
-          <img src={current.file_path} alt={update.title} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: 8 }} />
+          <img src={current.file_path} alt={update.title} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: 8, ...zoom.imgStyle }} />
         ) : current?.file_path?.startsWith('stream:') ? (
           <iframe
             src={`https://iframe.videodelivery.net/${current.file_path.replace('stream:', '')}`}

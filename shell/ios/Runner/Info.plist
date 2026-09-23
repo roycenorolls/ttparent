@@ -6,6 +6,12 @@
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>TT Parents shows member card partners near you.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>TT Parents uses the camera to scan QR codes.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>TT Parents saves class photos and videos to your library.</string>
 	<key>CFBundleDisplayName</key>
 	<string>TT Parents</string>
 	<key>CFBundleExecutable</key>

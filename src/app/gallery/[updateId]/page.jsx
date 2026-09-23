@@ -92,7 +92,12 @@ export default function FullscreenViewer() {
           </a>
         )}
         {current?.file_path && !current.file_path.startsWith('stream:') && (
-          <a href={current.file_path} download target="_blank" rel="noopener noreferrer" style={{
+          <a href={current.file_path} download target="_blank" rel="noopener noreferrer" onClick={e => {
+            // Inside the app shell the WebView can't download; hand the file to the shell instead.
+            if (!window.TTShell) return;
+            e.preventDefault();
+            window.TTShell.postMessage(JSON.stringify({ url: new URL(current.file_path, location.href).href, type: current.file_type || '' }));
+          }} style={{
             flex: 1, background: 'rgba(255,255,255,0.15)', color: 'var(--tt-bg)', textDecoration: 'none',
             padding: '10px 0', borderRadius: 12, textAlign: 'center', fontSize: 15, fontWeight: 500,
           }}>

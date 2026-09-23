@@ -22,6 +22,10 @@ export function expandMedia(posts) {
 
 export default function GalleryGrid({ updates, filter, activeId }) {
   const items = expandMedia(visibleItems(updates, filter, activeId));
+  // Viewer swipes through every tile in this order, across posts.
+  const saveOrder = () => {
+    try { sessionStorage.setItem('ttGallery', JSON.stringify(items.filter(t => t.type !== 'pdf').map(t => ({ u: t.id, i: t.index || 0 })))); } catch {}
+  };
 
   if (!items.length) {
     return (
@@ -48,7 +52,7 @@ export default function GalleryGrid({ updates, filter, activeId }) {
             </span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2, padding: '2px 2px 0' }}>
-            {items.map(item => <Tile key={item.key || item.id} item={item} />)}
+            {items.map(item => <Tile key={item.key || item.id} item={item} onOpen={saveOrder} />)}
           </div>
         </section>
       ))}
@@ -62,9 +66,9 @@ export default function GalleryGrid({ updates, filter, activeId }) {
   );
 }
 
-function Tile({ item }) {
+function Tile({ item, onOpen }) {
   return (
-    <Link href={`/gallery/${item.id}`} style={{
+    <Link href={`/gallery/${item.id}?m=${item.index || 0}`} onClick={onOpen} style={{
       position: 'relative', aspectRatio: '1', display: 'block', overflow: 'hidden', background: '#F1F5F9',
     }}>
       {item.thumbnail ? (

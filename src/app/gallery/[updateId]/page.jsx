@@ -119,6 +119,27 @@ export default function FullscreenViewer() {
         )}
       </div>
 
+      {/* Filmstrip: the whole gallery, current photo highlighted */}
+      {total > 1 && (
+        <div style={{ display: 'flex', gap: 4, padding: '12px 16px 0', overflowX: 'auto' }}>
+          {list.map((e, n) => (
+            <div
+              key={`${e.u}-${e.i}`}
+              ref={n === idx ? el => el?.scrollIntoView({ inline: 'center', block: 'nearest' }) : undefined}
+              onClick={() => setIdx(n)}
+              style={{
+                width: 48, height: 48, flexShrink: 0, borderRadius: 6, overflow: 'hidden', cursor: 'pointer',
+                border: n === idx ? '2px solid var(--tt-bg)' : '2px solid transparent', background: '#333',
+              }}
+            >
+              {(e.t || update.media?.[e.i]?.file_type?.startsWith('image')) && (
+                <img src={e.t || update.media[e.i].file_path} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Caption */}
       <div style={{ padding: '8px 16px' }}>
         <div style={{ color: 'var(--tt-bg)', fontSize: 14, fontWeight: 500 }}>{update.title}</div>
@@ -160,26 +181,6 @@ export default function FullscreenViewer() {
         )}
       </div>
 
-      {/* Filmstrip */}
-      {media.length > 1 && (
-        <div style={{ display: 'flex', gap: 4, padding: '0 16px 16px', overflowX: 'auto' }}>
-          {media.map((m, i) => (
-            <div
-              key={i}
-              onClick={() => setIdx(list.findIndex(e => e.u === entry.u && e.i === i))}
-              style={{
-                width: 48, height: 48, flexShrink: 0, borderRadius: 6, overflow: 'hidden', cursor: 'pointer',
-                border: i === entry.i ? '2px solid var(--tt-bg)' : '2px solid transparent',
-                background: '#333',
-              }}
-            >
-              {m.file_type?.startsWith('image') && (
-                <img src={m.file_path} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              )}
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

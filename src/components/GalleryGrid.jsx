@@ -24,7 +24,7 @@ export default function GalleryGrid({ updates, filter, activeId }) {
   const items = expandMedia(visibleItems(updates, filter, activeId));
   // Viewer swipes through every tile in this order, across posts.
   const saveOrder = () => {
-    try { sessionStorage.setItem('ttGallery', JSON.stringify(items.filter(t => t.type !== 'pdf').map(t => ({ u: t.id, i: t.index || 0 })))); } catch {}
+    try { sessionStorage.setItem('ttGallery', JSON.stringify(items.filter(t => t.type !== 'pdf').map(t => ({ u: t.id, i: t.index || 0, t: t.thumbnail })))); } catch {}
   };
 
   if (!items.length) {

@@ -38,6 +38,17 @@ export default function FullscreenViewer() {
   const [idx, setIdx]         = useState(0);
   const [details, setDetails] = useState({});
   const touchX = useRef(0);
+  const [landscape, setLandscape] = useState(false);
+  const [exited, setExited] = useState(false); // ✕ tapped: show the normal viewer until the next rotation
+
+  // Rotating the phone sideways turns an image into a full-screen view.
+  useEffect(() => {
+    const mq = window.matchMedia('(orientation: landscape) and (max-height: 500px)');
+    const sync = () => { setLandscape(mq.matches); setExited(false); };
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
 
   // The grid leaves its ordered tile list in sessionStorage so swiping can cross posts.
   useEffect(() => {
@@ -82,6 +93,29 @@ export default function FullscreenViewer() {
     ? `https://wa.me/62${teacher.phone.replace(/\D/g, '').replace(/^0/, '').replace(/^62/, '')}`
     : (teacher ? 'whatsapp://' : null);
 
+  const swipe = {
+    onTouchStart: e => { touchX.current = e.touches[0].clientX; },
+    onTouchEnd: e => {
+      const dx = e.changedTouches[0].clientX - touchX.current;
+      if (Math.abs(dx) < 40) return;
+      setIdx(i => Math.min(total - 1, Math.max(0, i + (dx < 0 ? 1 : -1))));
+    },
+  };
+
+  if (landscape && !exited && current?.file_type?.startsWith('image')) return (
+    <div {...swipe} style={{
+      position: 'fixed', inset: 0, zIndex: 1000, background: '#000', touchAction: 'pan-y',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      <img src={current.file_path} alt={update.title} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+      <button onClick={() => setExited(true)} aria-label="Exit full screen" style={{
+        position: 'absolute', top: 'calc(8px + env(safe-area-inset-top))', right: 'calc(8px + env(safe-area-inset-right))',
+        width: 32, height: 32, borderRadius: 16, border: 'none', cursor: 'pointer',
+        background: 'rgba(0,0,0,0.5)', color: '#fff', fontSize: 16, lineHeight: '32px', padding: 0,
+      }}>✕</button>
+    </div>
+  );
+
   return (
     <div style={{
       // Exactly the space above the docked nav, so the buttons never slide behind it.
@@ -101,12 +135,7 @@ export default function FullscreenViewer() {
 
       {/* Media */}
       <div
-        onTouchStart={e => { touchX.current = e.touches[0].clientX; }}
-        onTouchEnd={e => {
-          const dx = e.changedTouches[0].clientX - touchX.current;
-          if (Math.abs(dx) < 40) return;
-          setIdx(i => Math.min(total - 1, Math.max(0, i + (dx < 0 ? 1 : -1))));
-        }}
+        {...swipe}
         style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 16px', minHeight: 0, touchAction: 'pan-y' }}
       >
         {current?.file_type?.startsWith('image') ? (

@@ -56,7 +56,7 @@ export default function FullscreenViewer() {
     : (teacher ? 'https://api.whatsapp.com/send/' : null);
 
   return (
-    <div style={{ background: '#000', minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
+    <div className="tt-viewer" style={{ background: '#000', minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
       {/* Top bar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 16px', paddingTop: 'calc(16px + env(safe-area-inset-top))' }}>
         <button onClick={() => router.back()} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tt-bg)', fontSize: 23, padding: 0 }}>

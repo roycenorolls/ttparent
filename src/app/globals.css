@@ -85,6 +85,7 @@ main {
 
 /* The login screen owns the full viewport and has no bottom nav. */
 body:has(.tt-auth) main { padding-bottom: 0; }
+body:has(.tt-viewer) main { padding-bottom: 0; }
 
 /* ---------------------------------------------------------------------------
    Auth screens — soft gradient field, frosted card, underline inputs.

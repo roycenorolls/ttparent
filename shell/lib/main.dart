@@ -20,7 +20,7 @@ const appUrl = String.fromEnvironment('APP_URL', defaultValue: 'http://10.0.2.2:
 bool _isMediaUrl(Uri uri) {
   final app = Uri.parse(appUrl);
   if (uri.scheme == app.scheme && uri.host == app.host && uri.port == app.port) return true;
-  return uri.scheme == 'https' && const {'imagedelivery.net', 'kidsworld.co.id'}.contains(uri.host);
+  return uri.scheme == 'https' && const {'imagedelivery.net', 'media.tutortime.co.id', 'kidsworld.co.id'}.contains(uri.host);
 }
 
 void main() => runApp(const MaterialApp(home: Shell()));

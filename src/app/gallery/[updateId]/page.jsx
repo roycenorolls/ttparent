@@ -23,9 +23,11 @@ export default function FullscreenViewer() {
   const media  = update.media || [];
   const current = media[mediaIdx];
   const teacher = update.teacher;
+  // No school WhatsApp number assigned to this class: never fall back to a
+  // teacher's personal mobile, just let the parent open WhatsApp themselves.
   const waLink  = teacher?.phone
     ? `https://wa.me/62${teacher.phone.replace(/\D/g, '').replace(/^0/, '').replace(/^62/, '')}`
-    : null;
+    : (teacher ? 'https://api.whatsapp.com/send/' : null);
 
   return (
     <div style={{ background: '#000', minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>

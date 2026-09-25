@@ -102,7 +102,7 @@ export function PostCard({ u, showDate }) {
               style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
             />
             {u.class_name && <Pill overlay>{u.class_name}</Pill>}
-            {u.type === 'video' && (
+            {(u.cover_type ?? u.type) === 'video' && (
               <div style={{
                 position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 45, color: '#fff', textShadow: '0 2px 8px rgba(0,0,0,.4)',

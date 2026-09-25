@@ -1,27 +1,29 @@
 'use client';
 import Link from 'next/link';
 
-// Items shown for the current filter and child. Class-wide posts (no tags) show for everyone.
-export function visibleItems(updates, filter, activeId) {
+// Posts that belong in the gallery for this child: anything with files attached, whatever its
+// post type. Class-wide posts (no tags) show for everyone.
+export function visibleItems(updates, activeId) {
   return updates
-    .filter(u => u.type !== 'announcement')
-    .filter(u => filter === 'all' || u.type === filter || (filter === 'reports' && u.type === 'pdf'))
+    .filter(u => u.media?.length)
     .filter(u => !u.child_ids?.length || u.child_ids.includes(activeId));
 }
 
-// One tile per media item, so a post with several photos shows all of them.
-export function expandMedia(posts) {
-  return posts.flatMap(p => {
-    if (p.type === 'pdf' || !p.media?.length) return [p];
-    return p.media.map((m, i) => ({
-      ...p, id: p.id, key: `${p.id}-${m.id}`, thumbnail: m.thumbnail,
-      type: p.type === 'video' || m.type === 'video' ? 'video' : 'photo', index: i,
-    }));
-  });
+const TAB_KIND = { all: null, photo: 'photo', video: 'video', reports: 'pdf' };
+
+// One tile per FILE, so a single post can hold photos, videos and PDFs at once and each file
+// lands in its own tab (Photos / Videos / Reports).
+export function expandMedia(posts, filter = 'all') {
+  const kind = TAB_KIND[filter];
+  return posts
+    .flatMap(p => p.media.map((m, i) => ({
+      ...p, key: `${p.id}-${m.id}`, thumbnail: m.thumbnail, type: m.type, index: i,
+    })))
+    .filter(t => !kind || t.type === kind);
 }
 
 export default function GalleryGrid({ updates, filter, activeId }) {
-  const items = expandMedia(visibleItems(updates, filter, activeId));
+  const items = expandMedia(visibleItems(updates, activeId), filter);
   // Viewer swipes through every tile in this order, across posts.
   const saveOrder = () => {
     try { sessionStorage.setItem('ttGallery', JSON.stringify(items.filter(t => t.type !== 'pdf').map(t => ({ u: t.id, i: t.index || 0, t: t.thumbnail })))); } catch {}
@@ -35,8 +37,9 @@ export default function GalleryGrid({ updates, filter, activeId }) {
     );
   }
 
-  const photos = items.filter(i => i.type !== 'video' && i.type !== 'pdf').length;
-  const videos = items.filter(i => i.type === 'video').length;
+  const photos  = items.filter(i => i.type === 'photo').length;
+  const videos  = items.filter(i => i.type === 'video').length;
+  const reports = items.filter(i => i.type === 'pdf').length;
 
   return (
     <div>
@@ -59,7 +62,11 @@ export default function GalleryGrid({ updates, filter, activeId }) {
 
       <div style={{ padding: '32px 16px', textAlign: 'center' }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: '#000' }}>
-          {photos} {photos === 1 ? 'Photo' : 'Photos'}{videos ? `, ${videos} ${videos === 1 ? 'Video' : 'Videos'}` : ''}
+          {[
+            photos  && `${photos} ${photos === 1 ? 'Photo' : 'Photos'}`,
+            videos  && `${videos} ${videos === 1 ? 'Video' : 'Videos'}`,
+            reports && `${reports} ${reports === 1 ? 'Report' : 'Reports'}`,
+          ].filter(Boolean).join(', ')}
         </div>
       </div>
     </div>

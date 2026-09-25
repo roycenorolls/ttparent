@@ -32,7 +32,7 @@ export default function GalleryPage() {
       .catch(() => {});
   }, []);
 
-  const count  = expandMedia(visibleItems(updates, filter, activeId)).length;
+  const count  = expandMedia(visibleItems(updates, activeId), filter).length;
 
   return (
     <div style={{ background: '#fff', minHeight: '100dvh' }}>

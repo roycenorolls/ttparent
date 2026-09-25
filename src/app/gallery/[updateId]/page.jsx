@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
-import { Engagement } from '@/components/UpdatesFeed';
+import { Engagement, isReminder } from '@/components/UpdatesFeed';
 
 // Browsers ignore <a download> for cross-origin files and just open them, so
 // fetch the bytes and save them ourselves. Phones get the share sheet
@@ -136,6 +136,8 @@ export default function FullscreenViewer() {
     </div>
   );
 
+  if (isReminder(update)) return <AnnouncementView update={update} onBack={() => router.back()} />;
+
   const media  = update.media || [];
   const current = media[entry.i];
   const total = list.length;
@@ -253,6 +255,52 @@ export default function FullscreenViewer() {
         )}
       </div>
 
+    </div>
+  );
+}
+
+// An announcement opened from Home: the full text, then its attachments as tappable rows.
+function AnnouncementView({ update, onBack }) {
+  const files = update.media || [];
+  const open = f => {
+    const url = new URL(f.file_path, location.href).href;
+    if (window.TTShell) { window.TTShell.postMessage(JSON.stringify({ url, type: f.file_type || '' })); return; }
+    window.open(url, '_blank', 'noopener');
+  };
+  return (
+    <div style={{ background: '#fff', minHeight: '100dvh', paddingBottom: 32 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px' }}>
+        <button onClick={onBack} aria-label="Back" style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#0F172A' }}>←</button>
+        <span style={{ fontSize: 13, fontWeight: 700, color: '#B91C1C', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Important reminder</span>
+      </div>
+      <div style={{ padding: '0 20px' }}>
+        <h1 style={{ margin: 0, fontFamily: 'var(--tt-font-heading)', fontSize: 24, fontWeight: 800, color: '#0F172A', lineHeight: 1.25 }}>{update.title}</h1>
+        <div style={{ fontSize: 13, color: '#94A3B8', marginTop: 6 }}>
+          {new Date(update.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'long' })}
+          {update.teacher?.name ? ` · ${update.teacher.title || 'Ms.'} ${update.teacher.name.split(' ')[0]}` : ''}
+        </div>
+        {update.body && (
+          <p style={{ fontSize: 16, color: '#334155', lineHeight: 1.65, whiteSpace: 'pre-wrap', margin: '18px 0 0' }}>{update.body}</p>
+        )}
+        {files.length > 0 && (
+          <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {files.map((f, i) => {
+              const photo = f.file_type?.startsWith('image');
+              return (
+                <button key={i} onClick={() => open(f)} style={{
+                  display: 'flex', alignItems: 'center', gap: 12, padding: 12, borderRadius: 14, cursor: 'pointer',
+                  border: '1px solid #E2E8F0', background: '#F8FAFC', textAlign: 'left', fontFamily: 'inherit',
+                }}>
+                  {photo
+                    ? <img src={f.file_path} alt="" style={{ width: 48, height: 48, borderRadius: 10, objectFit: 'cover' }} />
+                    : <span style={{ width: 48, height: 48, borderRadius: 10, background: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>📄</span>}
+                  <span style={{ fontSize: 15, fontWeight: 600, color: '#0F172A' }}>{photo ? 'View photo' : 'Open document'}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -33,13 +33,16 @@ function Pill({ children, overlay }) {
   );
 }
 
-// A class-wide notice with no photo reads as a reminder, not a post.
-export const isReminder = u => u.type === 'announcement' && !(u.image || u.thumbnail);
+// An announcement: pinned at the top of Home, attachments behind a tap.
+// New announcements carry an end time; an older 'announcement' post that has
+// photos was really a photo post, so it stays a normal card.
+export const isReminder = u => u.type === 'announcement' && (!!u.ends_at || !u.media?.length);
 
-// Reminders newer than this are pinned under the child's status on Home.
+// New announcements stay pinned until their end time (the API drops them after);
+// older ones without an end time are pinned for 7 days.
 const PINNED_DAYS = 7;
 export const isPinnedReminder = u =>
-  isReminder(u) && Date.now() - new Date(u.created_at).getTime() < PINNED_DAYS * 86400000;
+  isReminder(u) && (!!u.ends_at || Date.now() - new Date(u.created_at).getTime() < PINNED_DAYS * 86400000);
 
 export function ReminderList({ updates }) {
   if (!updates?.length) return null;
@@ -75,6 +78,11 @@ function ReminderCard({ u }) {
           <div style={{ fontSize: 16, fontWeight: 700, color: '#0F172A', marginTop: 4 }}>{u.title}</div>
           {u.body && (
             <div style={{ fontSize: 14, color: '#6B6355', lineHeight: 1.55, marginTop: 4, ...CAPTION_CLAMP }}>{u.body}</div>
+          )}
+          {u.media?.length > 0 && (
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#B91C1C', marginTop: 8 }}>
+              📎 {u.media.length} {u.media.length === 1 ? 'attachment' : 'attachments'} · tap to view
+            </div>
           )}
         </div>
       </article>

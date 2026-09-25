@@ -1,11 +1,12 @@
 'use client';
 import Link from 'next/link';
+import { isReminder } from '@/components/UpdatesFeed';
 
 // Posts that belong in the gallery for this child: anything with files attached, whatever its
 // post type. Class-wide posts (no tags) show for everyone.
 export function visibleItems(updates, activeId) {
   return updates
-    .filter(u => u.media?.length)
+    .filter(u => u.media?.length && !isReminder(u)) // announcement attachments are not gallery items
     .filter(u => !u.child_ids?.length || u.child_ids.includes(activeId));
 }
 

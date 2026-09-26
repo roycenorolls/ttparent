@@ -63,8 +63,8 @@
   --tt-radius:      12px;
   --tt-radius-lg:   26px;
 
-  /* Room the floating bottom nav takes up, including its raised bubble. */
-  --tt-nav-space:   calc(92px + env(safe-area-inset-bottom));
+  /* Room the docked bottom nav takes up. */
+  --tt-nav-space:   calc(68px + env(safe-area-inset-bottom));
 
   --tt-font-heading: var(--font-heading), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --tt-font-body:    var(--font-body),    -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -319,23 +319,24 @@ body:has(.tt-auth) main { padding-bottom: 0; }
 .tt-twinkle { animation: tt-twinkle 2.4s ease-in-out infinite; }
 @keyframes tt-twinkle { 50% { opacity: .25; } }
 
-/* ---- Bottom nav: "jelly bubble". Each tab sets --c (fill), --cs (edge),
-   --s (idle stroke), --t (idle tint) and --lc (label colour). ---- */
+/* ---- Bottom nav: docked, frosted cream like the header, with "jelly bubble"
+   tabs. Each tab sets --c (fill), --cs (edge), --s (idle stroke), --t (idle
+   tint) and --lc (label colour). ---- */
 .tt-nav {
   position: fixed;
   z-index: 100;
-  left: 12px;
-  right: 12px;
-  bottom: calc(10px + env(safe-area-inset-bottom));
-  max-width: 440px;
-  height: 70px;
-  margin: 0 auto;
-  background: #fff;
-  border-radius: 28px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--tt-nav-space);
+  padding-bottom: env(safe-area-inset-bottom);
+  background: rgba(255, 249, 236, .92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(0, 48, 135, .08);
   display: flex;
   align-items: center;
   justify-content: space-around;
-  box-shadow: 0 5px 0 rgba(0, 48, 135, .10), 0 16px 32px -10px rgba(27, 33, 64, .28);
 }
 .tt-tab {
   flex: 1;

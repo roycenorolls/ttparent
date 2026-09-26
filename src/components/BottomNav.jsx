@@ -14,7 +14,7 @@ const tabs = [
 ];
 
 /**
- * Floating "jelly bubble" nav: two-tone icons in their own colours; the
+ * Docked "jelly bubble" nav: two-tone icons in their own colours; the
  * current tab pops up out of the bar as a coloured bubble and wobbles
  * (CSS in globals.css), with sparkles when the parent taps into it.
  */

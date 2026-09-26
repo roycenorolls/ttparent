@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Sparkles from '@/components/Sparkles';
 
 // Each tab has its own colour: active fill, its edge, idle stroke, idle tint, label.
@@ -17,22 +17,33 @@ const tabs = [
  * Docked "jelly bubble" nav: two-tone icons in their own colours; the
  * current tab pops up out of the bar as a coloured bubble and wobbles
  * (CSS in globals.css), with sparkles when the parent taps into it.
+ *
+ * The bubble moves on tap rather than when the URL changes, so it answers
+ * the finger straight away instead of waiting for the next page to load.
  */
 export default function BottomNav() {
   const path = usePathname();
   const [tap, setTap] = useState({ href: null, n: 0 });
+  const [pending, setPending] = useState(null);
+  useEffect(() => setPending(null), [path]);
 
   // Sign-in is a full-bleed screen with nowhere to navigate to yet.
   if (path === '/login') return null;
   return (
     <nav className="tt-nav">
       {tabs.map(({ href, label, icon: Icon, c: [c, cs, s, t, lc], yellow }) => {
-        const active = path === href || (href !== '/' && path.startsWith(href));
+        const active = pending
+          ? pending === href
+          : path === href || (href !== '/' && path.startsWith(href));
         return (
           <Link
             key={href} href={href} aria-current={active ? 'page' : undefined}
             className={`tt-tab${yellow ? ' is-yellow' : ''}`}
-            onClick={() => !active && setTap(p => ({ href, n: p.n + 1 }))}
+            onClick={() => {
+              if (active) return;
+              setPending(href);
+              setTap(p => ({ href, n: p.n + 1 }));
+            }}
             style={{ '--c': c, '--cs': cs, '--s': s, '--t': t, '--lc': lc }}
           >
             <span className="tt-tab-ic">

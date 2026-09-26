@@ -149,7 +149,7 @@ export default function FullscreenViewer() {
   // teacher's personal mobile, just let the parent open WhatsApp themselves.
   const waLink  = teacher?.phone
     ? `https://wa.me/62${teacher.phone.replace(/\D/g, '').replace(/^0/, '').replace(/^62/, '')}`
-    : (teacher ? 'whatsapp://' : null);
+    : 'whatsapp://';
 
   if (landscape && current?.file_type?.startsWith('image')) return (
     <div {...zoom.handlers} className="tt-dark-page" style={{
@@ -244,14 +244,12 @@ export default function FullscreenViewer() {
 
       {/* Actions */}
       <div style={{ display: 'flex', gap: 10, padding: '12px 16px' }}>
-        {waLink && (
-          <a href={waLink} target="_blank" rel="noopener noreferrer" className="tt-press" style={{
-            flex: 1, background: 'var(--tt-whatsapp)', color: '#fff', textDecoration: 'none', '--tt-edge': '#1A9E4B',
-            padding: '11px 0', borderRadius: 999, textAlign: 'center', fontFamily: 'var(--tt-font-heading)', fontSize: 16, fontWeight: 600,
-          }}>
-            Ask {teacher?.title || 'Ms.'} {teacher?.name?.split(' ')[0]}
-          </a>
-        )}
+        <a href={waLink} target="_blank" rel="noopener noreferrer" className="tt-press" style={{
+          flex: 1, background: 'var(--tt-whatsapp)', color: '#fff', textDecoration: 'none', '--tt-edge': '#1A9E4B',
+          padding: '11px 0', borderRadius: 999, textAlign: 'center', fontFamily: 'var(--tt-font-heading)', fontSize: 16, fontWeight: 600,
+        }}>
+          {teacher?.name ? `Ask ${teacher.title || 'Ms.'} ${teacher.name.split(' ')[0]}` : 'Ask the teacher'}
+        </a>
         {current?.file_path && !current.file_path.startsWith('stream:') && (
           <a href={current.file_path} download target="_blank" rel="noopener noreferrer" onClick={e => {
             // Inside the app shell the WebView can't download; hand the file to the shell instead.

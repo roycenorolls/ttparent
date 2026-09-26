@@ -233,13 +233,10 @@ function WhatsAppIcon() {
 }
 
 function BlockedNotice({ school, onReset }) {
-  // Front-desk numbers aren't configured yet (config/schools.php). The button
-  // is in place per the design; it becomes a live wa.me link once a number
-  // exists, and stays inert rather than opening a broken chat until then.
-  const wa = school.whatsapp
-    ? { as: 'a', href: `https://wa.me/${school.whatsapp}` }
-    : { as: 'div', 'aria-disabled': 'true', style: { opacity: 0.55 } };
-  const Wrapper = wa.as;
+  // Opens a chat with the front desk when the school has a WhatsApp number
+  // (config/schools.php); until one is set, it just opens the WhatsApp app so
+  // the parent can message the school themselves.
+  const waLink = school.whatsapp ? `https://wa.me/${school.whatsapp}` : 'whatsapp://';
 
   return (
     <div>
@@ -251,18 +248,19 @@ function BlockedNotice({ school, onReset }) {
         </p>
       </div>
 
-      <Wrapper
-        href={wa.href}
-        aria-disabled={wa['aria-disabled']}
+      <a
+        href={waLink}
+        target="_blank"
+        rel="noopener noreferrer"
         className="tt-press"
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                  height: 56, background: 'var(--tt-whatsapp)', borderRadius: 999, '--tt-edge': '#1A9E4B',
-                 textDecoration: 'none', marginBottom: 14, ...(wa.style || {}) }}
+                 textDecoration: 'none', marginBottom: 14 }}
       >
         <WhatsAppIcon />
         <span style={{ fontSize: 16, fontWeight: 600, color: '#fff',
                        fontFamily: 'var(--tt-font-heading)' }}>Message the school</span>
-      </Wrapper>
+      </a>
 
       <button type="button" onClick={onReset} className="tt-press"
               style={{ width: '100%', height: 52, border: 'none',

@@ -120,6 +120,24 @@ export default function FullscreenViewer() {
     api.updateDetail(entry.u).then(d => setDetails(m => ({ ...m, [entry.u]: d.update })));
   }, [entry, details]);
 
+  // Load the posts either side of this one, and their photos, in the
+  // background, so swiping into a photo from another post shows it at once.
+  useEffect(() => {
+    if (!list) return;
+    const near = list.slice(Math.max(0, idx - 2), idx + 4);
+    new Set(near.map(e => e.u)).forEach(u => {
+      api.updateDetail(u)
+        .then(d => {
+          setDetails(m => (m[u] ? m : { ...m, [u]: d.update }));
+          near.filter(e => e.u === u).forEach(e => {
+            const f = d.update?.media?.[e.i];
+            if (f?.file_type?.startsWith('image')) new Image().src = f.file_path;
+          });
+        })
+        .catch(() => {});
+    });
+  }, [list, idx]);
+
   // Direct link with no stored list: expand to the post's own media once loaded.
   useEffect(() => {
     if (list?.length === 1 && update?.media?.length > 1) {
@@ -130,9 +148,16 @@ export default function FullscreenViewer() {
 
   const zoom = useZoom(d => setIdx(i => Math.min((list?.length || 1) - 1, Math.max(0, i + d))), idx);
 
+  // Still fetching this post: show the grid's thumbnail rather than a blank
+  // screen, so the photo appears straight away and sharpens once loaded.
   if (!update) return (
-    <div className="tt-dark-page" style={{ background: '#000', minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ color: '#fff', fontSize: 15, fontWeight: 600 }}>Loading…</div>
+    <div className="tt-dark-page" style={{
+      background: '#000', height: 'calc(100dvh - var(--tt-nav-space))', padding: 16,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      {entry?.t
+        ? <img src={entry.t} alt="" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: 16 }} />
+        : <div style={{ color: '#fff', fontSize: 15, fontWeight: 600 }}>Loading…</div>}
     </div>
   );
 

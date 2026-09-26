@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { isReminder } from '@/components/UpdatesFeed';
 import { accentAt } from '@/lib/playful';
+import { api } from '@/lib/api';
 
 // Posts that belong in the gallery for this child: anything with files attached, whatever its
 // post type. Class-wide posts (no tags) show for everyone.
@@ -80,7 +81,9 @@ export default function GalleryGrid({ updates, filter, activeId }) {
 
 function Tile({ item, onOpen }) {
   return (
-    <Link href={`/gallery/${item.id}?m=${item.index || 0}`} onClick={onOpen} style={{
+    // Start loading the post as soon as a finger lands, before the tap completes.
+    <Link href={`/gallery/${item.id}?m=${item.index || 0}`} onClick={onOpen}
+          onPointerDown={() => api.updateDetail(item.id).catch(() => {})} style={{
       position: 'relative', aspectRatio: '1', display: 'block', overflow: 'hidden', borderRadius: 14, background: '#F1ECE1',
     }}>
       {item.thumbnail ? (

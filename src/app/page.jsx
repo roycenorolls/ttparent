@@ -7,6 +7,7 @@ import ChildSwitcher  from '@/components/ChildSwitcher';
 import DayTimeline    from '@/components/DayTimeline';
 import UpdatesFeed, { isPinnedReminder, ReminderList } from '@/components/UpdatesFeed';
 import TeacherWhatsApp from '@/components/TeacherWhatsApp';
+import HomeGreeting   from '@/components/HomeGreeting';
 
 export default function HomePage() {
   const [parent,   setParent]   = useState(null);
@@ -65,22 +66,20 @@ export default function HomePage() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 24 }}>
       <AppHeader title="Home" />
 
-      {/* Greeting */}
-      <div style={{ padding: '4px 20px 0' }}>
-        <div style={{
-          margin: 0, fontFamily: 'var(--tt-font-heading)', fontSize: 25, fontWeight: 800,
-          letterSpacing: '-0.02em', color: '#0F172A',
-        }}>
-          {greeting.text}
-          {parent?.name && <>, <span style={{ color: 'var(--tt-cobalt)' }}>{parent.title || 'Ms.'} {parent.name.split(' ')[0]}</span></>}
-        </div>
-        <div style={{ fontSize: 15, color: '#64748B', fontWeight: 500, marginTop: 2 }}>{greeting.sub}</div>
+      {/* Greeting, with the child pills overlapping its bottom edge */}
+      <div style={{ margin: '4px 16px 0' }}>
+        <HomeGreeting
+          greeting={greeting}
+          name={parent?.name && `${parent.title || 'Ms.'} ${parent.name.split(' ')[0]}`}
+          hasSwitcher={children.length > 1}
+        />
+        <ChildSwitcher children={children} activeId={activeId} onChange={setActiveId}
+                       style={{ position: 'relative', zIndex: 2, marginTop: -26, padding: '0 4px 6px' }} />
       </div>
 
-      <ChildSwitcher children={children} activeId={activeId} onChange={setActiveId} style={{ padding: '0 16px' }} />
       <ReminderList updates={reminders} />
       <DayTimeline child={child} status={status} updates={todays} reminders={[]} />
-      <UpdatesFeed title="Earlier updates" updates={earlier} />
+      <UpdatesFeed updates={earlier} accentStart={todays.length} />
       {child?.teacher && <TeacherWhatsApp teacher={child.teacher} />}
     </div>
   );

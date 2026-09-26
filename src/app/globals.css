@@ -12,20 +12,25 @@
    - Red carries the primary action on the auth screens (pill CTA). Errors use
      a tinted card rather than red borders, so the two never read the same.
    - Yellow is used for the school-detected chip and softer notices.
+   - Playful layer (Sept 2026): all three colours are used boldly — rounded
+     Fredoka headings, toy-block buttons, tilted stickers — because this is an
+     app for preschool parents. See the "Playful layer" section below.
    --------------------------------------------------------------------------- */
 :root {
   --tt-blue:        #003087;
   --tt-blue-deep:   #00205C;
   --tt-blue-soft:   #A9BEDC;
-  --tt-blue-tint:   #E6EDF7;
+  --tt-blue-tint:   #E3ECFF;
+  /* Brighter blue for fills next to the navy, e.g. the Schedule tab. */
+  --tt-blue-bright: #2F6FE4;
 
   --tt-yellow:      #FFCA05;
-  --tt-yellow-tint: #FFF6D6;
+  --tt-yellow-tint: #FFF3C4;
   --tt-yellow-text: #8B6510;
 
   --tt-red:         #C8102E;
   --tt-red-bright:  #E03248;
-  --tt-red-tint:    #FDECEE;
+  --tt-red-tint:    #FFE3E7;
   --tt-red-text:    #8E0B20;
 
   /* Sampled directly from img/logo-tabula.png — do not substitute the
@@ -34,8 +39,8 @@
   --tt-logo-amber:  #EFAC43;
 
   --tt-bg:          #FFFDF0;
-  /* Cooler page ground used behind the card-based screens. */
-  --tt-page:        #FDFBF7;
+  /* Warm cream page ground used behind the card-based screens. */
+  --tt-page:        #FFF9EC;
   --tt-cobalt:      #1E40AF;
   --tt-navy:        #0F2042;
   --tt-shadow-soft:  0 4px 20px -2px rgba(15, 23, 42, 0.05);
@@ -43,8 +48,8 @@
   --tt-shadow-float: 0 12px 36px -4px rgba(15, 23, 42, 0.12);
   --tt-surface:     #FFFFFF;
   --tt-border:      #E5E7EB;
-  --tt-text:        #111827;
-  --tt-muted:       #6B7280;
+  --tt-text:        #1B2140;
+  --tt-muted:       #6A7090;
   --tt-placeholder: #9CA3AF;
   --tt-label:       #546E7A;
 
@@ -58,6 +63,9 @@
   --tt-radius:      12px;
   --tt-radius-lg:   26px;
 
+  /* Room the floating bottom nav takes up, including its raised bubble. */
+  --tt-nav-space:   calc(92px + env(safe-area-inset-bottom));
+
   --tt-font-heading: var(--font-heading), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --tt-font-body:    var(--font-body),    -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
@@ -70,7 +78,7 @@
 html, body {
   margin: 0;
   padding: 0;
-  background: var(--tt-page);
+  background-color: var(--tt-page);
   font-family: var(--tt-font-body);
   font-size: 15px;
   color: var(--tt-text);
@@ -78,9 +86,21 @@ html, body {
   overscroll-behavior: none;
 }
 
+/* A sprinkle of red / yellow / blue confetti dots on the page ground. */
+body {
+  background-image:
+    radial-gradient(circle at 12% 18%, rgba(255, 202, 5, .35) 0 5px, transparent 6px),
+    radial-gradient(circle at 90% 34%, rgba(224, 50, 72, .22) 0 4px, transparent 5px),
+    radial-gradient(circle at 72% 68%, rgba(47, 111, 228, .20) 0 5px, transparent 6px),
+    radial-gradient(circle at 18% 86%, rgba(224, 50, 72, .20) 0 4px, transparent 5px);
+  background-size: 100% 560px;
+}
+/* The photo viewer is a black, full-screen page. */
+body:has(.tt-dark-page) { background: #000; }
+
 /* Bottom nav safe area */
 main {
-  padding-bottom: calc(84px + env(safe-area-inset-bottom));
+  padding-bottom: calc(var(--tt-nav-space) + 8px);
 }
 
 /* The login screen owns the full viewport and has no bottom nav. */
@@ -98,7 +118,7 @@ body:has(.tt-auth) main { padding-bottom: 0; }
   justify-content: center;
   padding: 24px;
   overflow: hidden;
-  background: radial-gradient(circle at top left, #FFFFFF 0%, #EEF4FC 55%, #FDF3EF 100%);
+  background: radial-gradient(circle at top left, #FFFFFF 0%, #E3ECFF 55%, #FFF3C4 100%);
 }
 
 /* Large blurred colour fields drifting behind the card. Purely decorative —
@@ -128,24 +148,23 @@ body:has(.tt-auth) main { padding-bottom: 0; }
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border: 1px solid rgba(255, 255, 255, 0.7);
-  border-radius: 28px;
+  border-radius: 32px;
   padding: 32px 28px;
-  box-shadow: 0 8px 32px rgba(0, 48, 135, 0.10);
+  box-shadow: 0 6px 0 rgba(0, 48, 135, 0.08), 0 8px 32px rgba(0, 48, 135, 0.10);
 }
 
 .tt-title {
   font-family: var(--tt-font-heading);
-  font-size: 28px;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 36px;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 38px;
   color: var(--tt-blue);
   margin: 0;
 }
 
 .tt-subtitle {
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--tt-muted);
   margin: 8px 0 0;
 }
@@ -171,27 +190,27 @@ body:has(.tt-auth) main { padding-bottom: 0; }
   color: var(--tt-label);
 }
 
-/* Underline-only field: recessed into the surface rather than boxed. */
+/* Chunky rounded field, like the rest of the playful controls. */
 .tt-field {
   width: 100%;
-  height: 48px;
-  padding: 0 14px;
-  background: rgba(255, 255, 255, 0.45);
-  border: none;
-  border-bottom: 2px solid rgba(84, 110, 122, 0.18);
-  border-radius: 10px 10px 0 0;
+  height: 50px;
+  padding: 0 16px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 2px solid #DCE3F2;
+  border-radius: 16px;
   font-size: 15px;
   font-family: inherit;
   color: var(--tt-text);
   outline: none;
-  transition: border-color .2s, background .2s;
+  transition: border-color .2s, background .2s, box-shadow .2s;
 }
 .tt-field::placeholder { color: rgba(84, 110, 122, 0.4); }
 .tt-field:focus {
-  border-bottom-color: var(--tt-blue);
-  background: rgba(255, 255, 255, 0.75);
+  border-color: var(--tt-blue-bright);
+  background: #fff;
+  box-shadow: 0 0 0 4px var(--tt-blue-tint);
 }
-.tt-field[aria-invalid="true"] { border-bottom-color: var(--tt-red); }
+.tt-field[aria-invalid="true"] { border-color: var(--tt-red-bright); }
 
 .tt-btn-primary {
   width: 100%;
@@ -200,21 +219,220 @@ body:has(.tt-auth) main { padding-bottom: 0; }
   align-items: center;
   justify-content: center;
   gap: 10px;
-  background: linear-gradient(135deg, var(--tt-red) 0%, var(--tt-red-bright) 100%);
+  background: var(--tt-red-bright);
   color: #fff;
   border: none;
   border-radius: 999px;
   font-family: var(--tt-font-heading);
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 10px 25px -5px rgba(200, 16, 46, 0.4);
-  transition: transform .15s, box-shadow .15s, opacity .15s;
+  box-shadow: 0 5px 0 #B0192D;
+  transition: transform .12s, box-shadow .12s, opacity .15s;
 }
-.tt-btn-primary:hover:not(:disabled)  { transform: scale(1.02); }
-.tt-btn-primary:active:not(:disabled) { transform: scale(0.97); }
+.tt-btn-primary:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 #B0192D; }
 .tt-btn-primary:disabled {
   opacity: .45;
   cursor: default;
   box-shadow: none;
+}
+
+/* ---------------------------------------------------------------------------
+   Playful layer: toy-block buttons, stickers, jelly pops and sparkles.
+   Inline styles set the colours through custom properties (--tt-edge etc.);
+   these classes supply the shapes and motion that inline styles can't.
+   --------------------------------------------------------------------------- */
+
+/* Two-tone icons: the shape's fill comes from --f (none when unset). */
+.tt-fill { fill: var(--f, none); transition: fill .25s; }
+
+/* Toy-block button: a solid coloured edge underneath that squashes on tap.
+   Set --tt-edge for the edge colour. */
+.tt-press {
+  box-shadow: 0 4px 0 var(--tt-edge, rgba(0, 48, 135, .12));
+  transition: transform .12s, box-shadow .12s, background .2s, color .2s;
+}
+.tt-press:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--tt-edge, rgba(0, 48, 135, .12));
+}
+
+/* Small tilted label stuck on a card's edge. */
+.tt-sticker {
+  display: inline-block;
+  font-family: var(--tt-font-heading);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 10px;
+  transform: rotate(4deg);
+  white-space: nowrap;
+}
+
+/* A strip of yellow washi tape holding a photo on. */
+.tt-tape {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  width: 86px;
+  height: 24px;
+  margin-left: -43px;
+  background: rgba(255, 202, 5, .75);
+  border-radius: 3px;
+  transform: rotate(3deg);
+  z-index: 2;
+}
+
+.tt-pop-in { animation: tt-pop .5s cubic-bezier(.34, 1.56, .64, 1) both; }
+@keyframes tt-pop { from { opacity: 0; transform: translateY(18px) scale(.97); } }
+
+.tt-jelly { animation: tt-jelly .6s; }
+@keyframes tt-jelly {
+  0%   { transform: scale(1, 1); }
+  30%  { transform: scale(1.25, .75); }
+  45%  { transform: scale(.8, 1.2); }
+  60%  { transform: scale(1.12, .9); }
+  75%  { transform: scale(.96, 1.04); }
+  100% { transform: scale(1, 1); }
+}
+
+.tt-bump { display: inline-block; animation: tt-bump .35s cubic-bezier(.34, 1.56, .64, 1); }
+@keyframes tt-bump { 40% { transform: scale(1.5); } }
+
+/* Sparkles: dots that fly out from the middle of a position:relative parent. */
+.tt-sparkles { position: absolute; left: 50%; top: 50%; pointer-events: none; }
+.tt-sparkles i {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 50%;
+  animation: tt-fly .6s ease-out forwards;
+}
+@keyframes tt-fly { to { transform: translate(var(--x), var(--y)) scale(.3); opacity: 0; } }
+
+@keyframes tt-pulse { 50% { transform: scale(1.25); } }
+
+/* Night-sky stars on the Home greeting; each sets its own delay. */
+.tt-twinkle { animation: tt-twinkle 2.4s ease-in-out infinite; }
+@keyframes tt-twinkle { 50% { opacity: .25; } }
+
+/* ---- Bottom nav: "jelly bubble". Each tab sets --c (fill), --cs (edge),
+   --s (idle stroke), --t (idle tint) and --lc (label colour). ---- */
+.tt-nav {
+  position: fixed;
+  z-index: 100;
+  left: 12px;
+  right: 12px;
+  bottom: calc(10px + env(safe-area-inset-bottom));
+  max-width: 440px;
+  height: 70px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  box-shadow: 0 5px 0 rgba(0, 48, 135, .10), 0 16px 32px -10px rgba(27, 33, 64, .28);
+}
+.tt-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  text-decoration: none;
+  font-family: var(--tt-font-heading);
+  font-size: 12px;
+  font-weight: 600;
+  color: #7A809C;
+}
+.tt-tab-ic {
+  position: relative;
+  width: 44px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--s);
+  --f: var(--t);
+  transition: width .35s cubic-bezier(.34, 1.56, .64, 1), height .35s cubic-bezier(.34, 1.56, .64, 1),
+              margin .35s cubic-bezier(.34, 1.56, .64, 1), background .2s;
+}
+.tt-tab-ic svg { transition: transform .3s cubic-bezier(.34, 1.56, .64, 1); }
+.tt-tab[aria-current="page"] { color: var(--lc); }
+.tt-tab[aria-current="page"] .tt-tab-ic {
+  width: 58px;
+  height: 58px;
+  margin-top: -24px;
+  background: var(--c);
+  border: 4px solid #fff;
+  color: #fff;
+  --f: rgba(255, 255, 255, .35);
+  box-shadow: 0 4px 0 var(--cs), 0 10px 18px -6px var(--cs);
+  animation: tt-jelly .6s;
+}
+.tt-tab[aria-current="page"] .tt-tab-ic svg { transform: scale(1.15) rotate(-6deg); }
+/* White on yellow is unreadable, so the yellow tab keeps a blue icon. */
+.tt-tab.is-yellow[aria-current="page"] .tt-tab-ic { color: var(--tt-blue); --f: #fff; }
+
+/* ---- Like / comment: jelly bubbles. A filled bubble means "you did this". ---- */
+.tt-react {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  cursor: pointer;
+  position: relative;
+  padding: 4px 16px 4px 4px;
+  border-radius: 999px;
+  background: var(--rt);
+  color: var(--rc);
+  font-family: var(--tt-font-heading);
+  font-size: 17px;
+  font-weight: 700;
+  box-shadow: 0 3px 0 var(--rs);
+  transition: transform .12s, box-shadow .12s;
+}
+.tt-react:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--rs); }
+.tt-react-like    { --rc: var(--tt-red);  --rt: #FFE3E7; --rs: #FFC2CB; --rb: var(--tt-red-bright);  --rf: #FFE3E7; }
+.tt-react-comment { --rc: var(--tt-blue); --rt: #E3ECFF; --rs: #C8D8FA; --rb: var(--tt-blue-bright); --rf: #E3ECFF; }
+/* On the black photo viewer. */
+.tt-react.is-dark { --rc: #fff; --rt: rgba(255, 255, 255, .14); --rs: rgba(0, 0, 0, .45); }
+.tt-react-bub {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  color: var(--rb);
+  --f: var(--rf);
+  box-shadow: 0 2px 0 var(--rs);
+  transition: background .25s, color .25s;
+}
+.tt-react-bub svg { transition: transform .3s cubic-bezier(.34, 1.56, .64, 1); }
+.tt-react.is-on .tt-react-bub { background: var(--rb); color: #fff; --f: rgba(255, 255, 255, .4); }
+.tt-react.is-on .tt-react-bub svg { transform: scale(1.1) rotate(-8deg); }
+.tt-react-like.is-on .tt-react-bub { --f: #fff; }
+/* "Teacher replied" dot on the comment bubble. */
+.tt-react-dot {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--tt-red-bright);
+  border: 2.5px solid #fff;
+  animation: tt-pulse 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tt-pop-in, .tt-jelly, .tt-bump, .tt-react-dot, .tt-twinkle,
+  .tt-tab[aria-current="page"] .tt-tab-ic { animation: none !important; }
+  .tt-sparkles { display: none; }
 }

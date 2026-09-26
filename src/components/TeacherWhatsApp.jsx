@@ -12,23 +12,23 @@ export default function TeacherWhatsApp({ teacher }) {
   return (
     <section style={{
       margin: '0 16px', background: '#fff', borderRadius: 24, padding: 16,
-      border: '1px solid #E2E8F0', boxShadow: 'var(--tt-shadow-soft)',
+      boxShadow: '0 5px 0 #CFDDFB',
       display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
         <div style={{
-          width: 44, height: 44, borderRadius: 16, flexShrink: 0, color: '#fff',
-          background: 'linear-gradient(45deg, #1E40AF, #3B82F6)',
+          width: 46, height: 46, borderRadius: 15, flexShrink: 0, color: '#fff',
+          background: 'var(--tt-blue-bright)', transform: 'rotate(-6deg)', boxShadow: '0 3px 0 #1C4FB3',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: 'var(--tt-font-heading)', fontWeight: 700, fontSize: 15,
+          fontFamily: 'var(--tt-font-heading)', fontWeight: 700, fontSize: 16,
         }}>
           {initials}
         </div>
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#94A3B8' }}>
+          <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--tt-muted)' }}>
             Classroom Lead
           </div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>
+          <div style={{ fontFamily: 'var(--tt-font-heading)', fontSize: 17, fontWeight: 600, color: 'var(--tt-text)' }}>
             {teacher.title || 'Ms.'} {teacher.name}
           </div>
         </div>
@@ -37,11 +37,12 @@ export default function TeacherWhatsApp({ teacher }) {
         href={waLink}
         target="_blank"
         rel="noopener noreferrer"
+        className="tt-press"
         style={{
           display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0,
-          background: 'var(--tt-whatsapp)', color: '#fff',
-          padding: '10px 14px', borderRadius: 16, textDecoration: 'none',
-          fontSize: 13, fontWeight: 700, boxShadow: '0 6px 12px -4px rgba(16,185,129,.35)',
+          background: 'var(--tt-whatsapp)', color: '#fff', '--tt-edge': '#1A9E4B',
+          padding: '10px 16px', borderRadius: 999, textDecoration: 'none',
+          fontFamily: 'var(--tt-font-heading)', fontSize: 15, fontWeight: 600,
         }}
       >
         <WhatsAppIcon />

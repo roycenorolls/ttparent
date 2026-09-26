@@ -5,11 +5,12 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import GalleryGrid, { visibleItems, expandMedia } from '@/components/GalleryGrid';
 
+// Each filter is a toy-block chip in its own colour: fill, edge, text on fill.
 const FILTERS = [
-  { key: 'all',     label: 'All' },
-  { key: 'photo',   label: 'Photos' },
-  { key: 'video',   label: 'Videos' },
-  { key: 'reports', label: 'Reports' },
+  { key: 'all',     label: 'All',     c: ['#003087', '#001E57', '#fff'] },
+  { key: 'photo',   label: 'Photos',  c: ['#E03248', '#B0192D', '#fff'] },
+  { key: 'video',   label: 'Videos',  c: ['#FFCA05', '#D9A800', '#003087'] },
+  { key: 'reports', label: 'Reports', c: ['#2F6FE4', '#1C4FB3', '#fff'] },
 ];
 
 export default function GalleryPage() {
@@ -35,38 +36,41 @@ export default function GalleryPage() {
   const count  = expandMedia(visibleItems(updates, activeId), filter).length;
 
   return (
-    <div style={{ background: '#fff', minHeight: '100dvh' }}>
+    <div style={{ minHeight: '100dvh' }}>
       <AppHeader title="Gallery" />
-      <div style={{
-        background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(24px) saturate(180%)', WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-        borderBottom: '1px solid rgba(0,0,0,0.05)', padding: '12px 16px 10px',
-      }}>
+      <div style={{ padding: '8px 16px 12px' }}>
         <ChildSwitcher children={children} activeId={activeId} onChange={setActiveId} style={{ marginBottom: 12 }} />
 
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-          <h1 style={{ margin: 0, fontFamily: 'var(--tt-font-heading)', fontSize: 29, fontWeight: 800, letterSpacing: '-0.02em', color: '#000', lineHeight: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h2 style={{ margin: 0, fontFamily: 'var(--tt-font-heading)', fontSize: 28, fontWeight: 700, color: 'var(--tt-text)', lineHeight: 1 }}>
             Photos
-          </h1>
-          {!loading && <span style={{ fontSize: 13, fontWeight: 500, color: '#8E8E93' }}>{count} {count === 1 ? 'Item' : 'Items'}</span>}
+          </h2>
+          {!loading && (
+            <span style={{
+              fontFamily: 'var(--tt-font-heading)', fontSize: 14, fontWeight: 600, color: 'var(--tt-blue)',
+              background: 'var(--tt-blue-tint)', padding: '4px 12px', borderRadius: 999,
+            }}>
+              {count} {count === 1 ? 'Item' : 'Items'}
+            </span>
+          )}
         </div>
 
-        {/* Segmented control */}
-        <div style={{
-          marginTop: 14, display: 'flex', padding: 2, borderRadius: 9,
-          background: 'rgba(229,229,234,0.8)',
-        }}>
+        {/* Filter chips */}
+        <div style={{ marginTop: 14, display: 'flex', gap: 8 }}>
           {FILTERS.map(f => {
             const on = filter === f.key;
+            const [fill, edge, ink] = f.c;
             return (
               <button
                 key={f.key}
                 onClick={() => setFilter(f.key)}
+                aria-pressed={on}
+                className="tt-press"
                 style={{
-                  flex: 1, padding: '5px 0', border: 'none', borderRadius: 7, cursor: 'pointer',
-                  fontFamily: 'inherit', fontSize: 13, fontWeight: on ? 700 : 600,
-                  background: on ? '#fff' : 'transparent',
-                  color: on ? '#000' : '#64748B',
-                  boxShadow: on ? '0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04)' : 'none',
+                  flex: 1, padding: '8px 0', border: 'none', borderRadius: 999, cursor: 'pointer',
+                  fontFamily: 'var(--tt-font-heading)', fontSize: 15, fontWeight: 600,
+                  background: on ? fill : '#fff', color: on ? ink : 'var(--tt-muted)',
+                  '--tt-edge': on ? edge : 'rgba(0,48,135,.10)',
                 }}
               >
                 {f.label}
@@ -77,7 +81,7 @@ export default function GalleryPage() {
       </div>
 
       {loading
-        ? <div style={{ padding: 32, textAlign: 'center', color: '#8E8E93' }}>Loading…</div>
+        ? <div style={{ padding: 32, textAlign: 'center', color: 'var(--tt-muted)', fontWeight: 600 }}>Loading…</div>
         : <GalleryGrid updates={updates} filter={filter} activeId={activeId} />
       }
     </div>

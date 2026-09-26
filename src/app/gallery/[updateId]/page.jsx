@@ -131,8 +131,8 @@ export default function FullscreenViewer() {
   const zoom = useZoom(d => setIdx(i => Math.min((list?.length || 1) - 1, Math.max(0, i + d))), idx);
 
   if (!update) return (
-    <div style={{ background: '#000', minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ color: '#fff', fontSize: 15 }}>Loading…</div>
+    <div className="tt-dark-page" style={{ background: '#000', minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ color: '#fff', fontSize: 15, fontWeight: 600 }}>Loading…</div>
     </div>
   );
 
@@ -149,7 +149,7 @@ export default function FullscreenViewer() {
     : (teacher ? 'whatsapp://' : null);
 
   if (landscape && current?.file_type?.startsWith('image')) return (
-    <div {...zoom.handlers} style={{
+    <div {...zoom.handlers} className="tt-dark-page" style={{
       position: 'fixed', inset: 0, zIndex: 1000, background: '#000', touchAction: 'none', overflow: 'hidden',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
@@ -158,20 +158,22 @@ export default function FullscreenViewer() {
   );
 
   return (
-    <div style={{
-      // Exactly the space above the docked nav, so the buttons never slide behind it.
-      background: '#000', height: 'calc(100dvh - 70px - env(safe-area-inset-bottom))', overflow: 'hidden',
+    <div className="tt-dark-page" style={{
+      // Exactly the space above the floating nav, so the buttons never slide behind it.
+      background: '#000', height: 'calc(100dvh - var(--tt-nav-space))', overflow: 'hidden',
       display: 'flex', flexDirection: 'column',
     }}>
       {/* Top bar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 16px', paddingTop: 'calc(16px + env(safe-area-inset-top))' }}>
-        <button onClick={() => router.back()} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tt-bg)', fontSize: 23, padding: 0 }}>
-          ←
-        </button>
-        <span style={{ color: 'var(--tt-bg)', fontSize: 14, fontWeight: 500 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '12px 16px', paddingTop: 'calc(12px + env(safe-area-inset-top))' }}>
+        <BackButton onClick={() => router.back()} dark />
+        <span style={{
+          color: 'var(--tt-blue)', background: 'var(--tt-yellow)', padding: '4px 12px', borderRadius: 999,
+          fontFamily: 'var(--tt-font-heading)', fontSize: 14, fontWeight: 600,
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        }}>
           {total > 1 ? `${idx + 1} of ${total}` : update.title}
         </span>
-        <div style={{ width: 22 }} />
+        <div style={{ width: 40 }} />
       </div>
 
       {/* Media */}
@@ -180,7 +182,7 @@ export default function FullscreenViewer() {
         style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 16px', minHeight: 0, touchAction: 'none', overflow: 'hidden' }}
       >
         {current?.file_type?.startsWith('image') ? (
-          <img src={current.file_path} alt={update.title} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: 8, ...zoom.imgStyle }} />
+          <img src={current.file_path} alt={update.title} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: 16, ...zoom.imgStyle }} />
         ) : current?.file_path?.startsWith('stream:') ? (
           <iframe
             src={`https://iframe.videodelivery.net/${current.file_path.replace('stream:', '')}`}
@@ -202,8 +204,8 @@ export default function FullscreenViewer() {
               ref={n === idx ? el => el?.scrollIntoView({ inline: 'center', block: 'nearest' }) : undefined}
               onClick={() => setIdx(n)}
               style={{
-                width: 48, height: 48, flexShrink: 0, borderRadius: 6, overflow: 'hidden', cursor: 'pointer',
-                border: n === idx ? '2px solid var(--tt-bg)' : '2px solid transparent', background: '#333',
+                width: 48, height: 48, flexShrink: 0, borderRadius: 12, overflow: 'hidden', cursor: 'pointer',
+                border: n === idx ? '3px solid var(--tt-yellow)' : '3px solid transparent', background: '#333',
               }}
             >
               {(e.t || update.media?.[e.i]?.file_type?.startsWith('image')) && (
@@ -216,8 +218,8 @@ export default function FullscreenViewer() {
 
       {/* Caption */}
       <div style={{ padding: '8px 16px' }}>
-        <div style={{ color: 'var(--tt-bg)', fontSize: 14, fontWeight: 500 }}>{update.title}</div>
-        <div style={{ color: 'rgba(253,246,238,0.6)', fontSize: 12, marginTop: 2 }}>
+        <div style={{ color: 'var(--tt-bg)', fontFamily: 'var(--tt-font-heading)', fontSize: 18, fontWeight: 600 }}>{update.title}</div>
+        <div style={{ color: 'rgba(253,246,238,0.6)', fontSize: 12.5, fontWeight: 600, marginTop: 2 }}>
           {new Date(update.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'long' })}
           {teacher ? ` · Posted by ${teacher.title || 'Ms.'} ${teacher.name?.split(' ')[0]}` : ''}
         </div>
@@ -229,9 +231,9 @@ export default function FullscreenViewer() {
       {/* Actions */}
       <div style={{ display: 'flex', gap: 10, padding: '12px 16px' }}>
         {waLink && (
-          <a href={waLink} target="_blank" rel="noopener noreferrer" style={{
-            flex: 1, background: 'var(--tt-whatsapp)', color: '#fff', textDecoration: 'none',
-            padding: '10px 0', borderRadius: 12, textAlign: 'center', fontSize: 15, fontWeight: 500,
+          <a href={waLink} target="_blank" rel="noopener noreferrer" className="tt-press" style={{
+            flex: 1, background: 'var(--tt-whatsapp)', color: '#fff', textDecoration: 'none', '--tt-edge': '#1A9E4B',
+            padding: '11px 0', borderRadius: 999, textAlign: 'center', fontFamily: 'var(--tt-font-heading)', fontSize: 16, fontWeight: 600,
           }}>
             Ask {teacher?.title || 'Ms.'} {teacher?.name?.split(' ')[0]}
           </a>
@@ -246,9 +248,9 @@ export default function FullscreenViewer() {
               return;
             }
             saveInBrowser(url);
-          }} style={{
-            flex: 1, background: '#fff', color: '#0F172A', textDecoration: 'none',
-            padding: '10px 0', borderRadius: 12, textAlign: 'center', fontSize: 15, fontWeight: 500,
+          }} className="tt-press" style={{
+            flex: 1, background: 'var(--tt-yellow)', color: 'var(--tt-blue)', textDecoration: 'none', '--tt-edge': '#D9A800',
+            padding: '11px 0', borderRadius: 999, textAlign: 'center', fontFamily: 'var(--tt-font-heading)', fontSize: 16, fontWeight: 600,
           }}>
             ↓ Save
           </a>
@@ -268,33 +270,38 @@ function AnnouncementView({ update, onBack }) {
     window.open(url, '_blank', 'noopener');
   };
   return (
-    <div style={{ background: '#fff', minHeight: '100dvh', paddingBottom: 32 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px' }}>
-        <button onClick={onBack} aria-label="Back" style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#0F172A' }}>←</button>
-        <span style={{ fontSize: 13, fontWeight: 700, color: '#B91C1C', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Important reminder</span>
+    <div style={{ minHeight: '100dvh', paddingBottom: 32 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px', paddingTop: 'calc(16px + env(safe-area-inset-top))' }}>
+        <BackButton onClick={onBack} />
+        <span className="tt-sticker" style={{ background: 'var(--tt-red-bright)', color: '#fff', boxShadow: '0 2px 0 #B0192D' }}>
+          Important reminder
+        </span>
       </div>
       <div style={{ padding: '0 20px' }}>
-        <h1 style={{ margin: 0, fontFamily: 'var(--tt-font-heading)', fontSize: 24, fontWeight: 800, color: '#0F172A', lineHeight: 1.25 }}>{update.title}</h1>
-        <div style={{ fontSize: 13, color: '#94A3B8', marginTop: 6 }}>
+        <h1 style={{ margin: '4px 0 0', fontFamily: 'var(--tt-font-heading)', fontSize: 28, fontWeight: 700, color: 'var(--tt-text)', lineHeight: 1.2 }}>{update.title}</h1>
+        <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--tt-muted)', marginTop: 6 }}>
           {new Date(update.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'long' })}
           {update.teacher?.name ? ` · ${update.teacher.title || 'Ms.'} ${update.teacher.name.split(' ')[0]}` : ''}
         </div>
         {update.body && (
-          <p style={{ fontSize: 16, color: '#334155', lineHeight: 1.65, whiteSpace: 'pre-wrap', margin: '18px 0 0' }}>{update.body}</p>
+          <p style={{
+            fontSize: 16, fontWeight: 600, color: 'var(--tt-text)', lineHeight: 1.65, whiteSpace: 'pre-wrap', margin: '18px 0 0',
+            background: '#fff', borderRadius: 24, padding: '16px 18px', boxShadow: '0 5px 0 #FFE3E7',
+          }}>{update.body}</p>
         )}
         {files.length > 0 && (
-          <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
             {files.map((f, i) => {
               const photo = f.file_type?.startsWith('image');
               return (
-                <button key={i} onClick={() => open(f)} style={{
-                  display: 'flex', alignItems: 'center', gap: 12, padding: 12, borderRadius: 14, cursor: 'pointer',
-                  border: '1px solid #E2E8F0', background: '#F8FAFC', textAlign: 'left', fontFamily: 'inherit',
+                <button key={i} onClick={() => open(f)} className="tt-press" style={{
+                  display: 'flex', alignItems: 'center', gap: 12, padding: 12, borderRadius: 20, cursor: 'pointer',
+                  border: 'none', background: '#fff', textAlign: 'left', fontFamily: 'inherit',
                 }}>
                   {photo
-                    ? <img src={f.file_path} alt="" style={{ width: 48, height: 48, borderRadius: 10, objectFit: 'cover' }} />
-                    : <span style={{ width: 48, height: 48, borderRadius: 10, background: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>📄</span>}
-                  <span style={{ fontSize: 15, fontWeight: 600, color: '#0F172A' }}>{photo ? 'View photo' : 'Open document'}</span>
+                    ? <img src={f.file_path} alt="" style={{ width: 48, height: 48, borderRadius: 14, objectFit: 'cover', transform: 'rotate(-4deg)' }} />
+                    : <span style={{ width: 48, height: 48, borderRadius: 14, background: 'var(--tt-red-tint)', transform: 'rotate(-4deg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>📄</span>}
+                  <span style={{ fontFamily: 'var(--tt-font-heading)', fontSize: 17, fontWeight: 600, color: 'var(--tt-text)' }}>{photo ? 'View photo' : 'Open document'}</span>
                 </button>
               );
             })}
@@ -302,5 +309,21 @@ function AnnouncementView({ update, onBack }) {
         )}
       </div>
     </div>
+  );
+}
+
+// Round toy-block back button; translucent on the black viewer.
+function BackButton({ onClick, dark }) {
+  return (
+    <button onClick={onClick} aria-label="Back" className="tt-press" style={{
+      width: 40, height: 40, flexShrink: 0, borderRadius: '50%', border: 'none', cursor: 'pointer',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: dark ? 'rgba(255,255,255,.16)' : '#fff', color: dark ? '#fff' : 'var(--tt-blue)',
+      '--tt-edge': dark ? 'rgba(255,255,255,.08)' : 'rgba(0,48,135,.14)',
+    }}>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M15 5l-7 7 7 7" />
+      </svg>
+    </button>
   );
 }

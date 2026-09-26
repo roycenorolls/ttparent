@@ -1,20 +1,17 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { formatDistance } from '@/lib/haversine';
+import { accentAt } from '@/lib/playful';
 
-const CATEGORY_STYLE = {
-  food:      { icon: '🍜', bg: 'var(--tt-yellow-tint)', text: 'var(--tt-yellow-text)', discountBg: 'var(--tt-yellow-tint)', discountText: 'var(--tt-yellow-text)' },
-  books:     { icon: '📚', bg: 'var(--tt-blue-tint)', text: 'var(--tt-blue)', discountBg: 'var(--tt-blue-tint)', discountText: 'var(--tt-blue)' },
-  dessert:   { icon: '🍦', bg: 'var(--tt-yellow-tint)', text: 'var(--tt-yellow-text)', discountBg: 'var(--tt-yellow-tint)', discountText: 'var(--tt-yellow-text)' },
-  health:    { icon: '💚', bg: 'var(--tt-blue-tint)', text: 'var(--tt-blue)', discountBg: 'var(--tt-blue-tint)', discountText: 'var(--tt-blue)' },
-  retail:    { icon: '🛍️', bg: 'var(--tt-yellow-tint)', text: 'var(--tt-yellow-text)', discountBg: 'var(--tt-yellow-tint)', discountText: 'var(--tt-yellow-text)' },
-};
+const CATEGORY_ICON = { food: '🍜', books: '📚', dessert: '🍦', health: '💚', retail: '🛍️' };
 
 // Demo check-in: remembered on this device for the day, nothing is sent anywhere.
 const checkInKey = id => `tt_partner_checkin_${id}_${new Date().toDateString()}`;
 
-export default function TenantCard({ tenant, distanceKm }) {
-  const style = CATEGORY_STYLE[tenant.category] || CATEGORY_STYLE.retail;
+// `index` picks the card colour, so the partner list cycles red → yellow → blue.
+export default function TenantCard({ tenant, distanceKm, index = 0 }) {
+  const icon = CATEGORY_ICON[tenant.category] || CATEGORY_ICON.retail;
+  const a = accentAt(index);
   const [checkedInAt, setCheckedInAt] = useState(null);
 
   useEffect(() => {
@@ -34,32 +31,29 @@ export default function TenantCard({ tenant, distanceKm }) {
 
   return (
     <div style={{
-      background: '#fff', borderRadius: 14, padding: '14px 16px',
-      border: '1px solid var(--tt-border)', display: 'flex', alignItems: 'center', gap: 12,
+      background: '#fff', borderRadius: 24, padding: 16,
+      boxShadow: `0 5px 0 ${a.soft}`, display: 'flex', alignItems: 'flex-start', gap: 12,
     }}>
       <div style={{
-        width: 40, height: 42, borderRadius: 10, flexShrink: 0,
-        background: style.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 23,
+        width: 46, height: 46, borderRadius: 15, flexShrink: 0, transform: 'rotate(-6deg)',
+        background: a.tint, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24,
       }}>
-        {style.icon}
+        {icon}
       </div>
 
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
-          <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--tt-text)' }}>{tenant.name}</span>
-          <span style={{
-            fontSize: 12, fontWeight: 500, color: style.discountText,
-            background: style.discountBg, padding: '2px 8px', borderRadius: 10,
-          }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 2 }}>
+          <span style={{ fontFamily: 'var(--tt-font-heading)', fontSize: 17, fontWeight: 600, color: 'var(--tt-text)' }}>{tenant.name}</span>
+          <span className="tt-sticker" style={{ background: a.main, color: a.on, boxShadow: `0 2px 0 ${a.edge}`, textTransform: 'none', letterSpacing: 0, fontSize: 13 }}>
             {tenant.discount}
           </span>
         </div>
-        <div style={{ fontSize: 12, color: style.text, marginBottom: 6 }}>{tenant.description}</div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tt-muted)', marginBottom: 8 }}>{tenant.description}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {distanceKm != null && (
             <span style={{
-              fontSize: 11, color: 'var(--tt-green)', background: 'var(--tt-blue-tint)',
-              padding: '2px 8px', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 3,
+              fontSize: 12, fontWeight: 700, color: 'var(--tt-green)', background: 'var(--tt-green-tint)',
+              padding: '3px 10px', borderRadius: 999, display: 'flex', alignItems: 'center', gap: 3,
             }}>
               📍 {formatDistance(distanceKm)}
             </span>
@@ -70,8 +64,8 @@ export default function TenantCard({ tenant, distanceKm }) {
               target="_blank"
               rel="noopener noreferrer"
               style={{
-                fontSize: 11, color: 'var(--tt-blue)', border: '1px solid var(--tt-blue)',
-                padding: '2px 8px', borderRadius: 10, textDecoration: 'none',
+                fontSize: 12, fontWeight: 700, color: 'var(--tt-blue)', background: 'var(--tt-blue-tint)',
+                padding: '3px 10px', borderRadius: 999, textDecoration: 'none',
               }}
             >
               🧭 Directions
@@ -79,27 +73,27 @@ export default function TenantCard({ tenant, distanceKm }) {
           )}
         </div>
 
-        <div style={{ marginTop: 10 }}>
+        <div style={{ marginTop: 12 }}>
           {checkedInAt ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <span style={{
-                fontSize: 12, fontWeight: 700, color: '#15803D', background: '#DCFCE7',
-                border: '1px solid #BBF7D0', padding: '6px 12px', borderRadius: 999,
+                fontFamily: 'var(--tt-font-heading)', fontSize: 14, fontWeight: 600, color: '#15803D', background: '#DCFCE7',
+                padding: '6px 14px', borderRadius: 999,
               }}>
                 ✓ Checked in · {new Date(checkedInAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
               </span>
               <button onClick={undo} style={{
-                fontSize: 12, color: 'var(--tt-muted)', background: 'none', border: 'none',
+                fontSize: 13, fontWeight: 700, color: 'var(--tt-muted)', background: 'none', border: 'none',
                 padding: 0, cursor: 'pointer', textDecoration: 'underline', fontFamily: 'inherit',
               }}>
                 Undo
               </button>
             </div>
           ) : (
-            <button onClick={checkIn} style={{
-              width: '100%', padding: '9px 14px', borderRadius: 999, border: 'none', cursor: 'pointer',
-              background: '#0A3A82', color: '#fff', fontSize: 13, fontWeight: 700, fontFamily: 'inherit',
-              boxShadow: '0 4px 10px -2px rgba(10,58,130,.35)',
+            <button onClick={checkIn} className="tt-press" style={{
+              width: '100%', padding: '10px 14px', borderRadius: 999, border: 'none', cursor: 'pointer',
+              background: 'var(--tt-blue)', color: '#fff', fontFamily: 'var(--tt-font-heading)', fontSize: 15, fontWeight: 600,
+              '--tt-edge': '#001E57',
             }}>
               📍 Check in
             </button>

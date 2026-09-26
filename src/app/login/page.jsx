@@ -86,12 +86,11 @@ export default function LoginPage() {
       {/* Logo on a white tile — the mark keeps its own red + amber. */}
       <div style={{
         position: 'relative', zIndex: 1,
-        width: 76, height: 76, marginBottom: 26,
-        background: 'rgba(255,255,255,0.92)',
-        border: '1px solid rgba(255,255,255,0.7)',
-        borderRadius: 20,
+        width: 80, height: 80, marginBottom: 28,
+        background: '#fff',
+        borderRadius: 24, transform: 'rotate(-6deg)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        boxShadow: '0 4px 16px rgba(0,48,135,0.08)',
+        boxShadow: '0 5px 0 rgba(0,48,135,0.14)',
       }}>
         <TutorTimeMark size={42} />
       </div>
@@ -112,10 +111,9 @@ export default function LoginPage() {
             {error && (
               <div role="alert" style={{
                 background: 'var(--tt-red-tint)',
-                border: '1px solid rgba(200,16,46,0.18)',
-                borderRadius: 14, padding: '12px 14px', marginBottom: 22,
+                borderRadius: 18, padding: '12px 14px', marginBottom: 22,
               }}>
-                <p style={{ margin: 0, fontSize: 14, color: 'var(--tt-red-text)', lineHeight: 1.5 }}>
+                <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--tt-red-text)', lineHeight: 1.5 }}>
                   {error}
                 </p>
               </div>
@@ -135,11 +133,11 @@ export default function LoginPage() {
               {school && (
                 <div style={{
                   display: 'flex', alignItems: 'center', gap: 8,
-                  background: 'var(--tt-yellow-tint)', borderRadius: 10,
+                  background: 'var(--tt-yellow-tint)', borderRadius: 14,
                   padding: '9px 12px', marginTop: 10,
                 }}>
                   <PinIcon />
-                  <span style={{ fontSize: 13, color: 'var(--tt-yellow-text)' }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--tt-yellow-text)' }}>
                     {school.school_label}
                   </span>
                 </div>
@@ -246,9 +244,8 @@ function BlockedNotice({ school, onReset }) {
   return (
     <div>
       <div style={{ background: 'var(--tt-yellow-tint)',
-                    border: '1px solid rgba(255,202,5,0.35)',
-                    borderRadius: 14, padding: 14, marginBottom: 22 }}>
-        <p style={{ margin: 0, fontSize: 14, color: 'var(--tt-yellow-text)', lineHeight: 1.6 }}>
+                    borderRadius: 18, padding: 14, marginBottom: 22 }}>
+        <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: 'var(--tt-yellow-text)', lineHeight: 1.6 }}>
           App access isn&rsquo;t switched on for this email yet. Ask the front desk at{' '}
           <span style={{ fontWeight: 700 }}>{school.school_label}</span> to set up your parent password.
         </p>
@@ -257,20 +254,21 @@ function BlockedNotice({ school, onReset }) {
       <Wrapper
         href={wa.href}
         aria-disabled={wa['aria-disabled']}
+        className="tt-press"
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                 height: 56, background: 'var(--tt-whatsapp)', borderRadius: 999,
-                 textDecoration: 'none', marginBottom: 12, ...(wa.style || {}) }}
+                 height: 56, background: 'var(--tt-whatsapp)', borderRadius: 999, '--tt-edge': '#1A9E4B',
+                 textDecoration: 'none', marginBottom: 14, ...(wa.style || {}) }}
       >
         <WhatsAppIcon />
         <span style={{ fontSize: 16, fontWeight: 600, color: '#fff',
                        fontFamily: 'var(--tt-font-heading)' }}>Message the school</span>
       </Wrapper>
 
-      <button type="button" onClick={onReset}
-              style={{ width: '100%', height: 52, border: '1px solid rgba(84,110,122,0.25)',
-                       borderRadius: 999, background: 'none',
-                       fontSize: 15, color: 'var(--tt-label)',
-                       fontFamily: 'inherit', cursor: 'pointer' }}>
+      <button type="button" onClick={onReset} className="tt-press"
+              style={{ width: '100%', height: 52, border: 'none',
+                       borderRadius: 999, background: '#fff', '--tt-edge': '#E4E8F2',
+                       fontSize: 16, fontWeight: 600, color: 'var(--tt-blue)',
+                       fontFamily: 'var(--tt-font-heading)', cursor: 'pointer' }}>
         Try a different email
       </button>
     </div>

@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { isReminder } from '@/components/UpdatesFeed';
+import { accentAt } from '@/lib/playful';
 
 // Posts that belong in the gallery for this child: anything with files attached, whatever its
 // post type. Class-wide posts (no tags) show for everyone.
@@ -32,8 +33,11 @@ export default function GalleryGrid({ updates, filter, activeId }) {
 
   if (!items.length) {
     return (
-      <div style={{ padding: '48px 16px', textAlign: 'center', color: '#8E8E93', fontSize: 15 }}>
-        Nothing here yet.
+      <div style={{ padding: '48px 16px', textAlign: 'center' }}>
+        <div style={{ fontSize: 40 }}>🖍️</div>
+        <div style={{ fontFamily: 'var(--tt-font-heading)', fontSize: 18, fontWeight: 600, color: 'var(--tt-muted)', marginTop: 6 }}>
+          Nothing here yet.
+        </div>
       </div>
     );
   }
@@ -45,24 +49,24 @@ export default function GalleryGrid({ updates, filter, activeId }) {
   return (
     <div>
       {groupByMonth(items).map(({ label, classes, items }, gi) => (
-        <section key={label} style={{ marginTop: gi ? 12 : 4 }}>
-          <div style={{
-            borderBottom: '1px solid rgba(0,0,0,0.05)',
-            padding: '6px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
-          }}>
-            <span style={{ fontSize: 14, fontWeight: 700, color: '#000', letterSpacing: '-0.01em' }}>{label}</span>
-            <span style={{ fontSize: 12, fontWeight: 500, color: '#8E8E93', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <section key={label} style={{ marginTop: gi ? 18 : 4 }}>
+          <div style={{ padding: '6px 16px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'var(--tt-font-heading)', fontSize: 18, fontWeight: 700, color: 'var(--tt-text)' }}>
+              <span style={{ width: 12, height: 12, borderRadius: 4, background: accentAt(gi).main, transform: 'rotate(12deg)' }} />
+              {label}
+            </span>
+            <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--tt-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {classes}
             </span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2, padding: '2px 2px 0' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, padding: '0 12px' }}>
             {items.map(item => <Tile key={item.key || item.id} item={item} onOpen={saveOrder} />)}
           </div>
         </section>
       ))}
 
       <div style={{ padding: '32px 16px', textAlign: 'center' }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: '#000' }}>
+        <div style={{ fontFamily: 'var(--tt-font-heading)', fontSize: 16, fontWeight: 600, color: 'var(--tt-muted)' }}>
           {[
             photos  && `${photos} ${photos === 1 ? 'Photo' : 'Photos'}`,
             videos  && `${videos} ${videos === 1 ? 'Video' : 'Videos'}`,
@@ -77,7 +81,7 @@ export default function GalleryGrid({ updates, filter, activeId }) {
 function Tile({ item, onOpen }) {
   return (
     <Link href={`/gallery/${item.id}?m=${item.index || 0}`} onClick={onOpen} style={{
-      position: 'relative', aspectRatio: '1', display: 'block', overflow: 'hidden', background: '#F1F5F9',
+      position: 'relative', aspectRatio: '1', display: 'block', overflow: 'hidden', borderRadius: 14, background: '#F1ECE1',
     }}>
       {item.thumbnail ? (
         <img src={item.thumbnail} alt={item.title} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
@@ -86,18 +90,18 @@ function Tile({ item, onOpen }) {
           {item.type === 'video' ? '▶️' : item.type === 'pdf' ? '📄' : '🖼️'}
         </div>
       )}
-      {item.type === 'video' && <Badge><PlayIcon />Video</Badge>}
-      {item.type === 'pdf' && <Badge>PDF</Badge>}
+      {item.type === 'video' && <Badge bg="#FFCA05" ink="#003087"><PlayIcon />Video</Badge>}
+      {item.type === 'pdf' && <Badge bg="#2F6FE4" ink="#fff">PDF</Badge>}
     </Link>
   );
 }
 
-function Badge({ children }) {
+function Badge({ bg, ink, children }) {
   return (
     <span style={{
-      position: 'absolute', bottom: 4, right: 4, display: 'flex', alignItems: 'center', gap: 2,
-      padding: '2px 4px', borderRadius: 4, color: '#fff', fontSize: 10, fontWeight: 600,
-      background: 'rgba(15,15,15,0.55)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+      position: 'absolute', bottom: 6, right: 6, display: 'flex', alignItems: 'center', gap: 3,
+      padding: '2px 7px', borderRadius: 999, color: ink, background: bg,
+      fontFamily: 'var(--tt-font-heading)', fontSize: 11, fontWeight: 600,
     }}>
       {children}
     </span>
@@ -105,7 +109,7 @@ function Badge({ children }) {
 }
 
 function PlayIcon() {
-  return <svg width="8" height="8" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>;
+  return <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>;
 }
 
 function groupByMonth(items) {

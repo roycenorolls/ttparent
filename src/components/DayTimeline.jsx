@@ -1,9 +1,11 @@
 import { formatTime, parseTime } from '@/lib/time';
+import { accentAt } from '@/lib/playful';
 import { PostCard, ReminderList } from '@/components/UpdatesFeed';
 
 /**
- * The child's day on one rail: arrival (and who dropped them off), today's
- * class posts in time order, then pick-up (and who collected them).
+ * The child's day: a full-width status card (arrival, and who dropped them
+ * off), then a dotted rail with today's class posts in time order and
+ * pick-up (and who collected them).
  *
  * The person named is whoever actually carried the child in or out — often a
  * driver or grandparent rather than the parent reading this — so each end of
@@ -14,8 +16,8 @@ import { PostCard, ReminderList } from '@/components/UpdatesFeed';
  * absent text makes no guess about why.
  */
 
-const GREEN = { tint: '#DCFCE7', ink: '#15803D', border: '#BBF7D0' };
-const AMBER = { tint: '#FEF3C7', ink: '#B45309', border: '#FDE68A' };
+const GREEN  = { border: '#86EFAC', edge: '#DCFCE7', art: '#DCFCE7', chip: '#22A559', chipInk: '#fff', chipEdge: '#15803D' };
+const YELLOW = { border: '#FFCA05', edge: '#FFF3C4', art: '#FFF3C4', chip: '#FFCA05', chipInk: '#003087', chipEdge: '#D9A800' };
 
 function minutesOf(iso) {
   const d = new Date(iso);
@@ -27,69 +29,65 @@ export default function DayTimeline({ child, status, updates, reminders }) {
   const name  = child?.firstname || 'Your child';
   const state = data.state || 'before';
 
+  // The status card always leads; the rail below holds the rest of the day.
+  const arrival = state === 'checkedin' || state === 'checkedout' ? 'checkin' : state === 'absent' ? 'absent' : 'before';
+
   const items = [];
-  if (state === 'checkedin' || state === 'checkedout') {
-    items.push({ kind: 'checkin', t: data.checkin_time ? parseTime(data.checkin_time) : -1 });
-  } else {
-    items.push({ kind: state === 'absent' ? 'absent' : 'before', t: -1 });
-  }
   if (state === 'checkedout') {
     items.push({ kind: 'checkout', t: data.checkout_time ? parseTime(data.checkout_time) : Infinity });
   }
   (updates || []).forEach(u => items.push({ kind: 'post', u, t: minutesOf(u.created_at) }));
   if (state === 'checkedin') items.push({ kind: 'pickup', t: Infinity });
+  items.sort((a, b) => a.t - b.t);
 
-  // Arrival first, pick-up last, posts in the order they happened.
-  const order = { checkin: 0, before: 0, absent: 0 };
-  items.sort((a, b) => a.t - b.t || (order[a.kind] ?? 1) - (order[b.kind] ?? 1));
-
-  const rail = list => (
-    <div style={{ position: 'relative', margin: '0 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-      <div style={{ position: 'absolute', left: 13, top: 20, bottom: 20, width: 2, background: '#EAE3D2' }} />
-      {list.map((it, i) => (
-        <div key={i} style={{ position: 'relative', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-          <Node kind={it.kind} />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            {it.kind === 'post'
-              ? <PostCard u={it.u} />
-              : <EventCard kind={it.kind} name={name} data={data} />}
+  let post = 0; // post cards cycle red → yellow → blue
+  const rail = (
+    <div style={{ position: 'relative', margin: '0 16px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+      <div style={{ position: 'absolute', left: 13, top: 20, bottom: 20, borderLeft: '3px dotted #F0C85A' }} />
+      {items.map((it, i) => {
+        const accent = it.kind === 'post' ? post++ : 0;
+        return (
+          <div key={i} style={{ position: 'relative', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+            <Node kind={it.kind} accent={accent} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              {it.kind === 'post'
+                ? <PostCard u={it.u} accent={accent} />
+                : <EventCard kind={it.kind} name={name} data={data} />}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 
-  // Pinned reminders sit directly under the arrival/status card, before the posts.
-  if (!reminders?.length) return rail(items);
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      {rail(items.slice(0, 1))}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+      <div style={{ margin: '0 16px' }}>
+        <EventCard kind={arrival} name={name} data={data} />
+      </div>
+      {/* Pinned reminders sit directly under the status card, before the posts. */}
       <ReminderList updates={reminders} />
-      {items.length > 1 && rail(items.slice(1))}
+      {items.length > 0 && rail}
     </div>
   );
 }
 
-function Node({ kind }) {
-  const done   = kind === 'checkin' || kind === 'checkout';
-  const waiting = kind === 'before' || kind === 'absent';
-  const Icon = kind === 'checkout' ? HomeIcon : kind === 'absent' ? CalendarIcon : kind === 'before' ? ClockIcon : ShieldIcon;
-
+function Node({ kind, accent }) {
   if (kind === 'post') {
-    return <div style={{ width: 28, height: 28, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#0A3A82', boxShadow: '0 0 0 4px #FDFBF7' }} />
+    return <div style={{ width: 29, height: 29, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <span style={{ width: 14, height: 14, borderRadius: '50%', background: accentAt(accent).main, boxShadow: '0 0 0 4px var(--tt-page)' }} />
     </div>;
   }
   if (kind === 'pickup') {
-    return <div style={{ width: 28, height: 28, flexShrink: 0, borderRadius: '50%', background: '#FDFBF7', border: '2px dashed #D4CDBC' }} />;
+    return <div style={{ width: 29, height: 29, flexShrink: 0, borderRadius: '50%', background: 'var(--tt-page)', border: '2.5px dashed #F0C85A' }} />;
   }
-  const c = done ? GREEN : AMBER;
+  // checkout
   return (
     <div style={{
-      width: 28, height: 28, flexShrink: 0, borderRadius: '50%', background: c.tint, color: c.ink,
-      boxShadow: '0 0 0 3px #FDFBF7', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      width: 29, height: 29, flexShrink: 0, borderRadius: '50%', background: '#22A559', color: '#fff',
+      boxShadow: '0 3px 0 #15803D', display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
-      <Icon />
+      <HomeIcon />
     </div>
   );
 }
@@ -100,22 +98,22 @@ function EventCard({ kind, name, data }) {
 
   const E = {
     before: {
-      c: AMBER, chip: 'Scheduled',
+      c: YELLOW, chip: 'Scheduled', art: 'school',
       title: `We're waiting for ${name} at school`,
       lines: [`Drop-off opens at ${data.open_time ? formatTime(data.open_time) : '7:30 AM'}${data.class_name ? ` · ${data.class_name}` : ''}`],
     },
     absent: {
-      c: AMBER, chip: 'Away',
+      c: YELLOW, chip: 'Away', art: 'sun',
       title: data.reason === 'vacation' ? `${name} is away today` : `${name} isn't expected today`,
       lines: [data.reason === 'vacation' ? 'Enjoy the break — see you when you’re back' : 'We’ll see you when term starts'],
     },
     checkin: {
-      c: GREEN, chip: 'At school',
+      c: GREEN, chip: 'At school', art: 'school',
       title: `${name} arrived at school`,
       lines: [at(data.checkin_time), person('Dropped off by', data.by_name || data.in_by)],
     },
     checkout: {
-      c: GREEN, chip: 'Home safe',
+      c: GREEN, chip: 'Home safe', art: 'home',
       title: `${name} is home safe`,
       lines: [at(data.checkout_time), person('Collected by', data.out_by)],
     },
@@ -128,40 +126,71 @@ function EventCard({ kind, name, data }) {
 
   const lines = E.lines.filter(Boolean);
 
+  if (!E.c) {
+    return (
+      <div style={{ borderRadius: 22, padding: 14, border: '2.5px dashed #F0C85A' }}>
+        <div style={{ fontFamily: 'var(--tt-font-heading)', fontSize: 16, fontWeight: 600, color: 'var(--tt-muted)' }}>{E.title}</div>
+        {lines.map((l, i) => <div key={i} style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--tt-muted)', marginTop: 2 }}>{l}</div>)}
+      </div>
+    );
+  }
+
   return (
-    <div style={{
-      background: E.c ? '#fff' : 'transparent', borderRadius: 20, padding: 14,
-      border: E.c ? `1px solid ${E.c.border}` : '1px dashed #D4CDBC',
-      boxShadow: E.c ? 'var(--tt-shadow-soft)' : 'none',
-      display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10,
+    <div className="tt-pop-in" style={{
+      position: 'relative', background: '#fff', borderRadius: 24, padding: 16,
+      border: `2.5px solid ${E.c.border}`, boxShadow: `0 5px 0 ${E.c.edge}`,
+      display: 'flex', alignItems: 'center', gap: 12,
     }}>
+      <span className="tt-sticker" style={{
+        position: 'absolute', top: -12, right: 14, background: E.c.chip, color: E.c.chipInk, boxShadow: `0 2px 0 ${E.c.chipEdge}`,
+      }}>
+        {E.chip}
+      </span>
+      <Art kind={E.art} bg={E.c.art} />
       <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: E.c ? '#0F172A' : '#8C8476', lineHeight: 1.3 }}>{E.title}</div>
+        <div style={{ fontFamily: 'var(--tt-font-heading)', fontSize: 18, fontWeight: 600, color: 'var(--tt-text)', lineHeight: 1.2 }}>{E.title}</div>
         {lines.map((l, i) => (
-          <div key={i} style={{ fontSize: 13, color: '#64748B', fontWeight: 500, marginTop: 2 }}>{l}</div>
+          <div key={i} style={{ fontSize: 14, color: 'var(--tt-muted)', fontWeight: 600, marginTop: 3 }}>{l}</div>
         ))}
       </div>
-      {E.chip && (
-        <span style={{
-          flexShrink: 0, padding: '3px 8px', borderRadius: 8, textTransform: 'uppercase',
-          fontSize: 11, fontWeight: 700, letterSpacing: '0.06em',
-          color: E.c.ink, background: E.c.tint, border: `1px solid ${E.c.border}`,
-        }}>
-          {E.chip}
-        </span>
-      )}
     </div>
+  );
+}
+
+// Little drawings for the status card: the school, home, or a holiday sun.
+function Art({ kind, bg }) {
+  return (
+    <svg width="58" height="58" viewBox="0 0 64 64" aria-hidden="true" style={{ flexShrink: 0 }}>
+      <circle cx="32" cy="32" r="30" fill={bg} />
+      {kind === 'school' && <>
+        <path d="M14 30 L32 16 L50 30 V48 H14z" fill="#E03248" />
+        <path d="M10 31 L32 13 L54 31" fill="none" stroke="#003087" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+        <rect x="27" y="36" width="10" height="12" rx="2" fill="#FFCA05" />
+        <rect x="18" y="33" width="6" height="6" rx="1.5" fill="#fff" /><rect x="40" y="33" width="6" height="6" rx="1.5" fill="#fff" />
+        <circle cx="32" cy="26" r="3" fill="#FFCA05" />
+      </>}
+      {kind === 'home' && <>
+        <path d="M16 31 L32 18 L48 31 V48 H16z" fill="#FFCA05" />
+        <path d="M12 32 L32 15 L52 32" fill="none" stroke="#E03248" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+        <rect x="27" y="36" width="10" height="12" rx="2" fill="#2F6FE4" />
+        <path d="M32 24.5c-1.6-2.2-5-1-5 1.4 0 2.2 5 5 5 5s5-2.8 5-5c0-2.4-3.4-3.6-5-1.4z" fill="#E03248" />
+      </>}
+      {kind === 'sun' && <>
+        {Array.from({ length: 8 }, (_, i) => (
+          <line key={i} x1="32" y1="12" x2="32" y2="17" stroke="#FFCA05" strokeWidth="3.5" strokeLinecap="round" transform={`rotate(${i * 45} 32 32)`} />
+        ))}
+        <circle cx="32" cy="32" r="11" fill="#FFCA05" />
+      </>}
+    </svg>
   );
 }
 
 /* Inline SVG rather than emoji — emoji render inconsistently across Android
    and can't inherit the accent colour. */
-const stroke = {
-  width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor',
-  strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': 'true',
-};
-
-function ClockIcon()    { return <svg {...stroke}><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>; }
-function ShieldIcon()   { return <svg {...stroke}><path d="M12 3l7 3v5c0 4.4-3 8.3-7 10-4-1.7-7-5.6-7-10V6l7-3z" /><path d="M9 12l2 2 4-4" /></svg>; }
-function HomeIcon()     { return <svg {...stroke}><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z" /><path d="M9 21V12h6v9" /></svg>; }
-function CalendarIcon() { return <svg {...stroke}><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M8 3v4M16 3v4M3 11h18" /></svg>; }
+function HomeIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z" /><path d="M9 21V12h6v9" />
+    </svg>
+  );
+}

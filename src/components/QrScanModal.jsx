@@ -64,8 +64,8 @@ export default function QrScanModal({ parent, onClose }) {
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          background: '#fff', borderRadius: 24, padding: 24, width: '100%', maxWidth: 320,
-          textAlign: 'center', boxShadow: 'var(--tt-shadow-card)',
+          background: '#fff', borderRadius: 30, padding: 24, width: '100%', maxWidth: 320,
+          textAlign: 'center', boxShadow: '0 6px 0 rgba(0,48,135,.18)',
         }}
       >
         {scanning ? (
@@ -79,7 +79,7 @@ export default function QrScanModal({ parent, onClose }) {
               Show this to the partner to scan
             </div>
             <canvas ref={qrRef} style={{ display: 'block', margin: '0 auto' }} />
-            <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--tt-text)', marginTop: 16 }}>
+            <div style={{ fontFamily: 'var(--tt-font-heading)', fontSize: 19, fontWeight: 600, color: 'var(--tt-text)', marginTop: 16 }}>
               {parent?.title} {parent?.name}
             </div>
             <div style={{ fontSize: 13, color: 'var(--tt-muted)', marginTop: 2 }}>#{parent?.member_id}</div>
@@ -87,17 +87,17 @@ export default function QrScanModal({ parent, onClose }) {
         )}
         {result && <div style={{ marginTop: 14, fontSize: 14, fontWeight: 600, color: 'var(--tt-text)', wordBreak: 'break-all' }}>Scanned: {result}</div>}
         {error && <div style={{ marginTop: 14, fontSize: 13, color: '#B91C1C' }}>{error}</div>}
-        <button type="button" onClick={() => { setResult(''); setError(''); setScanning(s => !s); }} style={{
-          width: '100%', marginTop: 20, padding: '10px 14px', borderRadius: 999, cursor: 'pointer',
-          background: '#fff', color: '#0A3A82', border: '1px solid #0A3A82', fontSize: 14, fontWeight: 700,
-          fontFamily: 'inherit',
+        <button type="button" onClick={() => { setResult(''); setError(''); setScanning(s => !s); }} className="tt-press" style={{
+          width: '100%', marginTop: 20, padding: '11px 14px', borderRadius: 999, cursor: 'pointer',
+          background: 'var(--tt-yellow)', color: 'var(--tt-blue)', border: 'none', fontSize: 16, fontWeight: 600,
+          fontFamily: 'var(--tt-font-heading)', '--tt-edge': '#D9A800',
         }}>
           {scanning ? 'Stop scanning' : 'Scan QR with camera'}
         </button>
-        <button onClick={onClose} style={{
-          width: '100%', marginTop: 10, padding: '10px 14px', borderRadius: 999, border: 'none',
-          cursor: 'pointer', background: '#0A3A82', color: '#fff', fontSize: 14, fontWeight: 700,
-          fontFamily: 'inherit',
+        <button onClick={onClose} className="tt-press" style={{
+          width: '100%', marginTop: 12, padding: '11px 14px', borderRadius: 999, border: 'none',
+          cursor: 'pointer', background: 'var(--tt-blue)', color: '#fff', fontSize: 16, fontWeight: 600,
+          fontFamily: 'var(--tt-font-heading)', '--tt-edge': '#001E57',
         }}>
           Close
         </button>

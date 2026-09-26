@@ -1,31 +1,39 @@
 'use client';
 
-const NAVY = '#0A3A82';
+// Initial colours per child, in order.
+const BADGES = [
+  { bg: '#E03248', ink: '#fff' },
+  { bg: '#2F6FE4', ink: '#fff' },
+  { bg: '#FFCA05', ink: '#003087' },
+];
 
-// Pill per child with an initial badge; the active child is navy with a yellow badge.
+// Chunky toy-block pill per child with a coloured initial; the active child turns yellow.
 export default function ChildSwitcher({ children, activeId, onChange, style }) {
   if (!children || children.length <= 1) return null;
 
   return (
-    <div style={{ display: 'flex', gap: 8, overflowX: 'auto', scrollbarWidth: 'none', ...style }}>
-      {children.map(child => {
+    // Bottom padding leaves room for the pills' solid edge inside the scroller.
+    <div style={{ display: 'flex', gap: 10, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 6, ...style }}>
+      {children.map((child, i) => {
         const active = child.id === activeId;
+        const badge = BADGES[i % BADGES.length];
         return (
           <button
             key={child.id}
             onClick={() => onChange(child.id)}
+            className="tt-press"
             style={{
               display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, cursor: 'pointer',
-              padding: '6px 14px 6px 8px', borderRadius: 999, fontFamily: 'inherit', fontSize: 14, fontWeight: 700,
-              background: active ? NAVY : '#fff', color: active ? '#fff' : '#5C5549',
-              border: active ? '1px solid transparent' : '1px solid #EAE3D2',
-              boxShadow: '0 1px 2px rgba(0,0,0,.05)',
+              padding: '5px 16px 5px 5px', borderRadius: 999, border: 'none',
+              fontFamily: 'var(--tt-font-heading)', fontSize: 17, fontWeight: 600,
+              background: active ? 'var(--tt-yellow)' : '#fff', color: active ? 'var(--tt-blue)' : 'var(--tt-text)',
+              '--tt-edge': active ? '#D9A800' : 'rgba(0,48,135,.12)',
             }}
           >
             <span style={{
-              width: 20, height: 20, borderRadius: '50%', fontSize: 11, fontWeight: 700,
+              width: 32, height: 32, borderRadius: '50%', fontSize: 15,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: active ? '#FFC72C' : '#F3EFE6', color: active ? NAVY : '#5C5549',
+              background: badge.bg, color: badge.ink, boxShadow: '0 0 0 2px #fff',
             }}>
               {child.firstname.charAt(0)}
             </span>

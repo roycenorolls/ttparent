@@ -1,20 +1,21 @@
 import './globals.css';
-import { Plus_Jakarta_Sans, Hanken_Grotesk } from 'next/font/google';
+import { Fredoka, Nunito } from 'next/font/google';
 import BottomNav from '@/components/BottomNav';
 
-// Plus Jakarta Sans for headings (friendly, rounded), Hanken Grotesk for
-// body and UI labels (sharper, more professional). Self-hosted by next/font
-// so there's no render-blocking request and no layout shift.
-const jakarta = Plus_Jakarta_Sans({
+// Fredoka (rounded) for headings, names and buttons; Nunito for body text.
+// Both keep the app feeling young and friendly for preschool parents.
+// Self-hosted by next/font so there's no render-blocking request and no
+// layout shift.
+const fredoka = Fredoka({
   subsets: ['latin'],
-  weight: ['600', '700', '800'],
+  weight: ['500', '600', '700'],
   variable: '--font-heading',
   display: 'swap',
 });
 
-const hanken = Hanken_Grotesk({
+const nunito = Nunito({
   subsets: ['latin'],
-  weight: ['400', '500', '700'],
+  weight: ['500', '600', '700', '800'],
   variable: '--font-body',
   display: 'swap',
 });
@@ -32,7 +33,7 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${jakarta.variable} ${hanken.variable}`}>
+    <html lang="en" className={`${fredoka.variable} ${nunito.variable}`}>
       <body>
         <main>{children}</main>
         <BottomNav />

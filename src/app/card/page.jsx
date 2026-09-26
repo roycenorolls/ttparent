@@ -33,9 +33,9 @@ export default function CardPage() {
   return (
     <div style={{ paddingBottom: 24 }}>
       <AppHeader title="Member Card" />
-      <div style={{ padding: '12px 16px 12px' }}>
+      <div style={{ padding: '8px 20px 14px' }}>
         {data?.parent && (
-          <div style={{ fontSize: 14, color: 'var(--tt-muted)', marginTop: 2 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--tt-muted)' }}>
             {data.parent.title} {data.parent.name} · #{data.parent.member_id}
           </div>
         )}
@@ -43,26 +43,36 @@ export default function CardPage() {
 
       <MembershipCard parent={data?.parent} children={data?.children} />
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 16px 10px' }}>
-        <span style={{ fontSize: 16, fontWeight: 500, color: 'var(--tt-text)' }}>Partners near you</span>
-        <span style={{ fontSize: 13, color: 'var(--tt-muted)' }}>{sorted.length} partners</span>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '28px 16px 12px' }}>
+        <span style={{ fontFamily: 'var(--tt-font-heading)', fontSize: 21, fontWeight: 700, color: 'var(--tt-text)' }}>Partners near you</span>
+        <span style={{
+          fontFamily: 'var(--tt-font-heading)', fontSize: 14, fontWeight: 600, color: 'var(--tt-blue)',
+          background: 'var(--tt-blue-tint)', padding: '4px 12px', borderRadius: 999,
+        }}>
+          {sorted.length} partners
+        </span>
       </div>
 
-      <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {sorted.map(t => (
-          <TenantCard key={t.id} tenant={t} distanceKm={t.distKm} />
+      <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {sorted.map((t, i) => (
+          <TenantCard key={t.id} tenant={t} distanceKm={t.distKm} index={i} />
         ))}
       </div>
 
       {sorted.length > 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '16px 16px 0', color: 'var(--tt-muted)' }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10, margin: '18px 16px 0', padding: '10px 14px',
+          background: 'var(--tt-yellow-tint)', borderRadius: 18, color: 'var(--tt-yellow-text)',
+        }}>
           <span style={{ fontSize: 17 }}>ℹ️</span>
-          <span style={{ fontSize: 12 }}>Show your QR at checkout. Discount applies once scanned.</span>
+          <span style={{ fontSize: 13, fontWeight: 700 }}>Show your QR at checkout. Discount applies once scanned.</span>
         </div>
       )}
 
-      <div style={{ padding: '16px 16px 0' }}>
-        <Link href="/settings" style={{ fontSize: 13, color: 'var(--tt-blue)', textDecoration: 'none' }}>
+      <div style={{ padding: '18px 16px 0' }}>
+        <Link href="/settings" style={{
+          fontFamily: 'var(--tt-font-heading)', fontSize: 14, fontWeight: 600, color: 'var(--tt-blue)', textDecoration: 'none',
+        }}>
           Privacy settings →
         </Link>
       </div>

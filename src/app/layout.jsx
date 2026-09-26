@@ -33,7 +33,14 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${fredoka.variable} ${nunito.variable}`}>
+    // The inline script tags <html> before first paint, so the class isn't in
+    // the server markup — hence suppressHydrationWarning.
+    <html lang="en" className={`${fredoka.variable} ${nunito.variable}`} suppressHydrationWarning>
+      <head>
+        {/* The app shell exposes window.TTShell; tag it so CSS can drop the
+            safe-area insets the shell already applies. */}
+        <script dangerouslySetInnerHTML={{ __html: "if(window.TTShell)document.documentElement.classList.add('tt-shell')" }} />
+      </head>
       <body>
         <main>{children}</main>
         <BottomNav />

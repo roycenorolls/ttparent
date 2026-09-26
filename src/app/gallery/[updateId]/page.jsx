@@ -164,7 +164,7 @@ export default function FullscreenViewer() {
       display: 'flex', flexDirection: 'column',
     }}>
       {/* Top bar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '12px 16px', paddingTop: 'calc(12px + env(safe-area-inset-top))' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '12px 16px', paddingTop: 'calc(12px + var(--tt-safe-top))' }}>
         <BackButton onClick={() => router.back()} dark />
         <span style={{
           color: 'var(--tt-blue)', background: 'var(--tt-yellow)', padding: '4px 12px', borderRadius: 999,
@@ -271,7 +271,7 @@ function AnnouncementView({ update, onBack }) {
   };
   return (
     <div style={{ minHeight: '100dvh', paddingBottom: 32 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px', paddingTop: 'calc(16px + env(safe-area-inset-top))' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px', paddingTop: 'calc(16px + var(--tt-safe-top))' }}>
         <BackButton onClick={onBack} />
         <span className="tt-sticker" style={{ background: 'var(--tt-red-bright)', color: '#fff', boxShadow: '0 2px 0 #B0192D' }}>
           Important reminder

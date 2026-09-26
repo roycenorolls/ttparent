@@ -24,11 +24,13 @@ function clock(iso) {
 // photos was really a photo post, so it stays a normal card.
 export const isReminder = u => u.type === 'announcement' && (!!u.ends_at || !u.media?.length);
 
-// New announcements stay pinned until their end time (the API drops them after);
-// older ones without an end time are pinned for 7 days.
+// New announcements stay pinned until their end time, then drop into the
+// feed as a quiet card; older ones without an end time are pinned for 7 days.
 const PINNED_DAYS = 7;
 export const isPinnedReminder = u =>
-  isReminder(u) && (!!u.ends_at || Date.now() - new Date(u.created_at).getTime() < PINNED_DAYS * 86400000);
+  isReminder(u) && (u.ends_at
+    ? new Date(u.ends_at).getTime() > Date.now()
+    : Date.now() - new Date(u.created_at).getTime() < PINNED_DAYS * 86400000);
 
 export function ReminderList({ updates }) {
   if (!updates?.length) return null;
@@ -39,22 +41,28 @@ export function ReminderList({ updates }) {
   );
 }
 
-function ReminderCard({ u }) {
+// `past`: the announcement is over, so it sits in the feed without the red
+// "Important" treatment.
+function ReminderCard({ u, past }) {
+  const ink  = past ? 'var(--tt-muted)' : 'var(--tt-red-bright)';
+  const edge = past ? '#8A93AD' : '#B0192D';
   return (
     <Link href={`/gallery/${u.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
       <article className="tt-pop-in" style={{
         position: 'relative', background: '#fff', borderRadius: 24, padding: '18px 16px 16px',
-        border: '2.5px solid #FFC2CB', boxShadow: '0 5px 0 #FFE3E7',
+        border: `2.5px solid ${past ? '#E4E8F2' : '#FFC2CB'}`, boxShadow: `0 5px 0 ${past ? '#F1F3F8' : '#FFE3E7'}`,
         display: 'flex', gap: 14, alignItems: 'flex-start',
       }}>
-        <span className="tt-sticker" style={{
-          position: 'absolute', top: -12, right: 14, background: 'var(--tt-red-bright)', color: '#fff', boxShadow: '0 2px 0 #B0192D',
-        }}>
-          Important
-        </span>
+        {!past && (
+          <span className="tt-sticker" style={{
+            position: 'absolute', top: -12, right: 14, background: 'var(--tt-red-bright)', color: '#fff', boxShadow: '0 2px 0 #B0192D',
+          }}>
+            Important
+          </span>
+        )}
         <div style={{
-          width: 44, height: 44, borderRadius: 15, flexShrink: 0, background: 'var(--tt-red-bright)', color: '#fff',
-          transform: 'rotate(-6deg)', boxShadow: '0 3px 0 #B0192D',
+          width: 44, height: 44, borderRadius: 15, flexShrink: 0, background: ink, color: '#fff',
+          transform: 'rotate(-6deg)', boxShadow: `0 3px 0 ${edge}`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -62,13 +70,13 @@ function ReminderCard({ u }) {
           </svg>
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--tt-muted)' }}>Reminder · {shortDate(u.created_at)}</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--tt-muted)' }}>{past ? 'Announcement' : 'Reminder'} · {shortDate(u.created_at)}</div>
           <div style={{ ...HEADING, fontSize: 18, fontWeight: 600, lineHeight: 1.25, marginTop: 2 }}>{u.title}</div>
           {u.body && (
             <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--tt-muted)', lineHeight: 1.5, marginTop: 4, ...CAPTION_CLAMP }}>{u.body}</div>
           )}
           {u.media?.length > 0 && (
-            <div style={{ fontFamily: 'var(--tt-font-heading)', fontSize: 14, fontWeight: 600, color: 'var(--tt-red-bright)', marginTop: 8 }}>
+            <div style={{ fontFamily: 'var(--tt-font-heading)', fontSize: 14, fontWeight: 600, color: ink, marginTop: 8 }}>
               📎 {u.media.length} {u.media.length === 1 ? 'attachment' : 'attachments'} · tap to view
             </div>
           )}
@@ -84,7 +92,7 @@ function ReminderCard({ u }) {
  */
 export function PostCard({ u, showDate, accent = 0 }) {
   const photo = u.image || u.thumbnail;
-  if (isReminder(u)) return <ReminderCard u={u} />;
+  if (isReminder(u)) return <ReminderCard u={u} past={!isPinnedReminder(u)} />;
 
   const a = accentAt(accent);
   const teacher = u.teacher_name || 'TutorTime';

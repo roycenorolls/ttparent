@@ -1,6 +1,7 @@
 import './globals.css';
 import { Fredoka, Nunito } from 'next/font/google';
 import BottomNav from '@/components/BottomNav';
+import ShellTag from '@/components/ShellTag';
 
 // Fredoka (rounded) for headings, names and buttons; Nunito for body text.
 // Both keep the app feeling young and friendly for preschool parents.
@@ -42,6 +43,7 @@ export default function RootLayout({ children }) {
         <script dangerouslySetInnerHTML={{ __html: "if(window.TTShell)document.documentElement.classList.add('tt-shell')" }} />
       </head>
       <body>
+        <ShellTag />
         <main>{children}</main>
         <BottomNav />
       </body>

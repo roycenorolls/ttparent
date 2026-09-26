@@ -18,10 +18,14 @@ export default function HomePage() {
   const [updates,  setUpdates]  = useState([]);
   const [error,    setError]    = useState(null);
 
-  const greeting = getGreeting();
+  // Set after mount: the server's clock is UTC, so rendering it there would
+  // mismatch the phone's local time and break hydration.
+  const [greeting, setGreeting] = useState(null);
 
   // Load parent + children on mount
   useEffect(() => {
+    setGreeting(getGreeting());
+
     api.membership()
       .then(data => {
         setParent(data.parent);
@@ -68,11 +72,11 @@ export default function HomePage() {
 
       {/* Greeting, with the child pills overlapping its bottom edge */}
       <div style={{ margin: '4px 16px 0' }}>
-        <HomeGreeting
+        {greeting && <HomeGreeting
           greeting={greeting}
           name={parent?.name && `${parent.title || 'Ms.'} ${parent.name.split(' ')[0]}`}
           hasSwitcher={children.length > 1}
-        />
+        />}
         <ChildSwitcher children={children} activeId={activeId} onChange={setActiveId}
                        style={{ position: 'relative', zIndex: 2, marginTop: -26, padding: '0 4px 6px' }} />
       </div>

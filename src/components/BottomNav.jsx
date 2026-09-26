@@ -1,8 +1,9 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Sparkles from '@/components/Sparkles';
+import { api } from '@/lib/api';
 
 // Each tab has its own colour: active fill, its edge, idle stroke, idle tint, label.
 const tabs = [
@@ -26,6 +27,24 @@ export default function BottomNav() {
   const [tap, setTap] = useState({ href: null, n: 0 });
   const [pending, setPending] = useState(null);
   useEffect(() => setPending(null), [path]);
+
+  // Once signed in, quietly load Gallery's and Schedule's data a moment after
+  // the first screen settles, so opening those tabs the first time is instant
+  // (api.js keeps it for a couple of minutes). Never on /login: a 401 there
+  // would bounce straight back to /login.
+  const warmed = useRef(false);
+  const signedIn = path !== '/login';
+  useEffect(() => {
+    if (!signedIn || warmed.current) return;
+    warmed.current = true;
+    const t = setTimeout(() => {
+      api.updates(true).catch(() => {});
+      api.membership()
+        .then(d => d.children?.[0] && api.scheduleWeek(d.children[0].id))
+        .catch(() => {});
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [signedIn]);
 
   // Sign-in is a full-bleed screen with nowhere to navigate to yet.
   if (path === '/login') return null;

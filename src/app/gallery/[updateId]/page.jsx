@@ -140,6 +140,9 @@ export default function FullscreenViewer() {
 
   const media  = update.media || [];
   const current = media[entry.i];
+  const isStream = current?.file_path?.startsWith('stream:');
+  // A video uploaded as a plain file (R2), not through Cloudflare Stream.
+  const isVideo  = !isStream && (current?.file_type?.startsWith('video') || current?.type === 'video');
   const total = list.length;
   const teacher = update.teacher;
   // No school WhatsApp number assigned to this class: never fall back to a
@@ -177,18 +180,29 @@ export default function FullscreenViewer() {
       </div>
 
       {/* Media */}
+      {/* No zoom/swipe on a video: dragging its progress bar would flip to the next item. */}
       <div
-        {...zoom.handlers}
-        style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 16px', minHeight: 0, touchAction: 'none', overflow: 'hidden' }}
+        {...(isVideo ? {} : zoom.handlers)}
+        style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 16px', minHeight: 0, touchAction: isVideo ? 'auto' : 'none', overflow: 'hidden' }}
       >
         {current?.file_type?.startsWith('image') ? (
           <img src={current.file_path} alt={update.title} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: 16, ...zoom.imgStyle }} />
-        ) : current?.file_path?.startsWith('stream:') ? (
+        ) : isStream ? (
           <iframe
             src={`https://iframe.videodelivery.net/${current.file_path.replace('stream:', '')}`}
             style={{ width: '100%', aspectRatio: '16/9', border: 'none', borderRadius: 8 }}
             allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
+          />
+        ) : isVideo ? (
+          <video
+            key={current.file_path}
+            src={current.file_path}
+            poster={current.thumbnail || undefined}
+            controls
+            playsInline
+            preload="metadata"
+            style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: 16, background: '#000' }}
           />
         ) : (
           <div style={{ color: 'var(--tt-bg)', fontSize: 49 }}>📄</div>

@@ -11,7 +11,7 @@ export default function AppHeader({ title }) {
   return (
     <header style={{
       position: 'sticky', top: 0, zIndex: 40,
-      background: 'rgba(255,249,236,0.92)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+      background: 'rgba(255,249,236,0.80)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
       padding: 'calc(12px + env(safe-area-inset-top)) 20px 12px',
       display: 'flex', alignItems: 'center', gap: 12,
     }}>

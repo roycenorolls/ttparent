@@ -330,7 +330,7 @@ body:has(.tt-auth) main { padding-bottom: 0; }
   bottom: 0;
   height: var(--tt-nav-space);
   padding-bottom: env(safe-area-inset-bottom);
-  background: rgba(255, 249, 236, .92);
+  background: rgba(255, 249, 236, .80);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid rgba(0, 48, 135, .08);

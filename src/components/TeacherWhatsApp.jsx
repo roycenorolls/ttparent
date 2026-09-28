@@ -1,11 +1,11 @@
+import { openWhatsapp, teacherWhatsappLink } from '@/lib/whatsapp';
+
 export default function TeacherWhatsApp({ teacher }) {
   if (!teacher) return null;
 
   // No school WhatsApp number assigned to this class: never fall back to a
   // teacher's personal mobile, just let the parent open WhatsApp themselves.
-  const waLink = teacher.phone
-    ? `https://wa.me/62${teacher.phone.replace(/\D/g, '').replace(/^0/, '').replace(/^62/, '')}`
-    : 'whatsapp://';
+  const waLink = teacherWhatsappLink(teacher.phone);
 
   const initials = (teacher.name || 'T').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('');
 
@@ -37,6 +37,7 @@ export default function TeacherWhatsApp({ teacher }) {
         href={waLink}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={openWhatsapp}
         className="tt-press"
         style={{
           display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0,

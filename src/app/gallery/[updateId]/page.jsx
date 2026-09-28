@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
+import { openWhatsapp, teacherWhatsappLink } from '@/lib/whatsapp';
 import { Engagement, isReminder } from '@/components/UpdatesFeed';
 
 // Browsers ignore <a download> for cross-origin files and just open them, so
@@ -172,9 +173,7 @@ export default function FullscreenViewer() {
   const teacher = update.teacher;
   // No school WhatsApp number assigned to this class: never fall back to a
   // teacher's personal mobile, just let the parent open WhatsApp themselves.
-  const waLink  = teacher?.phone
-    ? `https://wa.me/62${teacher.phone.replace(/\D/g, '').replace(/^0/, '').replace(/^62/, '')}`
-    : 'whatsapp://';
+  const waLink  = teacherWhatsappLink(teacher?.phone);
 
   if (landscape && current?.file_type?.startsWith('image')) return (
     <div {...zoom.handlers} className="tt-dark-page" style={{
@@ -269,7 +268,7 @@ export default function FullscreenViewer() {
 
       {/* Actions */}
       <div style={{ display: 'flex', gap: 10, padding: '12px 16px' }}>
-        <a href={waLink} target="_blank" rel="noopener noreferrer" className="tt-press" style={{
+        <a href={waLink} target="_blank" rel="noopener noreferrer" onClick={openWhatsapp} className="tt-press" style={{
           flex: 1, background: 'var(--tt-whatsapp)', color: '#fff', textDecoration: 'none', '--tt-edge': '#1A9E4B',
           padding: '11px 0', borderRadius: 999, textAlign: 'center', fontFamily: 'var(--tt-font-heading)', fontSize: 16, fontWeight: 600,
         }}>

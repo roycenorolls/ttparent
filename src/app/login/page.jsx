@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import TutorTimeMark from '@/components/TutorTimeMark';
+import { openWhatsapp, whatsappLink } from '@/lib/whatsapp';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -236,7 +237,7 @@ function BlockedNotice({ school, onReset }) {
   // Opens a chat with the front desk when the school has a WhatsApp number
   // (config/schools.php); until one is set, it just opens the WhatsApp app so
   // the parent can message the school themselves.
-  const waLink = school.whatsapp ? `https://wa.me/${school.whatsapp}` : 'whatsapp://';
+  const waLink = whatsappLink(school.whatsapp);
 
   return (
     <div>
@@ -252,6 +253,7 @@ function BlockedNotice({ school, onReset }) {
         href={waLink}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={openWhatsapp}
         className="tt-press"
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                  height: 56, background: 'var(--tt-whatsapp)', borderRadius: 999, '--tt-edge': '#1A9E4B',

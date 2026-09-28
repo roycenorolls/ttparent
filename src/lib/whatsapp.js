@@ -1,14 +1,12 @@
-// Link for a WhatsApp button: a chat with `number` (country code, digits only)
-// when there is one, otherwise just the WhatsApp app. The bare link has to name
-// the "send" host: Android's WhatsApp ignores a plain whatsapp://, so the
-// button did nothing there.
+// Link for a WhatsApp button: a chat with `number` when there is one,
+// otherwise just the WhatsApp app. The bare link has to name the "send" host:
+// Android's WhatsApp ignores a plain whatsapp://, so the button did nothing.
+//
+// Schools type numbers into the dashboard however they like (0812…, +62 812…,
+// 62812…); wa.me needs 62812….
 export function whatsappLink(number) {
-  return number ? `https://wa.me/${number}` : 'whatsapp://send';
-}
-
-// Teacher phones are stored as local Indonesian numbers (08…); wa.me wants 62….
-export function teacherWhatsappLink(phone) {
-  return whatsappLink(phone && `62${phone.replace(/\D/g, '').replace(/^0/, '').replace(/^62/, '')}`);
+  const local = String(number || '').replace(/\D/g, '').replace(/^0+/, '').replace(/^62/, '');
+  return local ? `https://wa.me/62${local}` : 'whatsapp://send';
 }
 
 // onClick for WhatsApp links. In the app shell a target="_blank" link opens a

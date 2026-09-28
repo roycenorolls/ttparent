@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
-import { openWhatsapp, teacherWhatsappLink } from '@/lib/whatsapp';
+import { openWhatsapp, whatsappLink } from '@/lib/whatsapp';
 import { Engagement, isReminder } from '@/components/UpdatesFeed';
 
 // Browsers ignore <a download> for cross-origin files and just open them, so
@@ -173,7 +173,7 @@ export default function FullscreenViewer() {
   const teacher = update.teacher;
   // No school WhatsApp number assigned to this class: never fall back to a
   // teacher's personal mobile, just let the parent open WhatsApp themselves.
-  const waLink  = teacherWhatsappLink(teacher?.phone);
+  const waLink  = whatsappLink(teacher?.phone);
 
   if (landscape && current?.file_type?.startsWith('image')) return (
     <div {...zoom.handlers} className="tt-dark-page" style={{

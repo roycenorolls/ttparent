@@ -1,11 +1,11 @@
-import { openWhatsapp, teacherWhatsappLink } from '@/lib/whatsapp';
+import { openWhatsapp, whatsappLink } from '@/lib/whatsapp';
 
 export default function TeacherWhatsApp({ teacher }) {
   if (!teacher) return null;
 
   // No school WhatsApp number assigned to this class: never fall back to a
   // teacher's personal mobile, just let the parent open WhatsApp themselves.
-  const waLink = teacherWhatsappLink(teacher.phone);
+  const waLink = whatsappLink(teacher.phone);
 
   const initials = (teacher.name || 'T').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('');
 

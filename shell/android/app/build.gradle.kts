@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -5,8 +7,14 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Upload key: android/key.properties locally, CM_* env vars on Codemagic.
+val keyProps = Properties().apply {
+    val f = rootProject.file("key.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}
+
 android {
-    namespace = "com.tutortime.parent_shell"
+    namespace = "com.ttcomm.parent"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -21,7 +29,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.tutortime.parent_shell"
+        applicationId = "com.ttcomm.parent"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -30,11 +38,18 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = (keyProps.getProperty("storeFile") ?: System.getenv("CM_KEYSTORE_PATH"))?.let { file(it) }
+            storePassword = keyProps.getProperty("storePassword") ?: System.getenv("CM_KEYSTORE_PASSWORD")
+            keyAlias = keyProps.getProperty("keyAlias") ?: System.getenv("CM_KEY_ALIAS")
+            keyPassword = keyProps.getProperty("keyPassword") ?: System.getenv("CM_KEY_PASSWORD")
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }

@@ -1,4 +1,4 @@
-package com.tutortime.parent_shell
+package com.ttcomm.parent
 
 import io.flutter.embedding.android.FlutterActivity
 

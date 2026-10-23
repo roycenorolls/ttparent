@@ -91,6 +91,7 @@ function ReminderCard({ u, past }) {
  * aren't from today. `accent` picks the card colour (red → yellow → blue).
  */
 export function PostCard({ u, showDate, accent = 0 }) {
+  const [expanded, setExpanded] = useState(false);
   const photo = u.image || u.thumbnail;
   if (isReminder(u)) return <ReminderCard u={u} past={!isPinnedReminder(u)} />;
 
@@ -164,10 +165,15 @@ export function PostCard({ u, showDate, accent = 0 }) {
         <h3 style={{ ...HEADING, margin: '14px 0 4px', fontSize: 22, fontWeight: 700, lineHeight: 1.2 }}>
           {u.title}
         </h3>
-        {u.body && (
-          <p style={{ margin: 0, fontSize: 15.5, fontWeight: 600, color: 'var(--tt-muted)', lineHeight: 1.45, ...CAPTION_CLAMP }}>{u.body}</p>
-        )}
       </Link>
+      {u.body && (
+        <p onClick={() => setExpanded(x => !x)} style={{ margin: 0, fontSize: 15.5, fontWeight: 600, color: 'var(--tt-muted)', lineHeight: 1.45, cursor: 'pointer', whiteSpace: 'pre-wrap', ...(expanded ? null : CAPTION_CLAMP) }}>{u.body}</p>
+      )}
+      {u.body?.length > 110 && (
+        <button onClick={() => setExpanded(x => !x)} style={{ all: 'unset', cursor: 'pointer', marginTop: 4, fontSize: 14, fontWeight: 700, color: 'var(--tt-blue)' }}>
+          {expanded ? 'Show less' : 'Read more'}
+        </button>
+      )}
 
       <Engagement u={u} time={`${showDate ? `${shortDate(u.created_at)} · ` : ''}${clock(u.created_at)}`} />
     </article>

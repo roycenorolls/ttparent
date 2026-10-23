@@ -1,7 +1,7 @@
 import TutorTimeMark from '@/components/TutorTimeMark';
 
 /**
- * Shared top bar: TT mark on a tilted white tile and the page title with red / yellow / blue dots beneath. Sticky, frosted cream so content
+ * Shared top bar: TT mark on a tilted white tile and the page title with red / yellow / blue dots above. Sticky, frosted cream so content
  * scrolls under it.
  *
  * The mark keeps its fixed brand colours, so it always sits on a white tile.
@@ -22,14 +22,14 @@ export default function AppHeader({ title }) {
         <TutorTimeMark size={22} />
       </div>
       <div>
-        <h1 style={{ margin: 0, fontFamily: 'var(--tt-font-heading)', fontSize: 20, fontWeight: 700, color: 'var(--tt-text)', lineHeight: 1.1 }}>
-          {title}
-        </h1>
-        <span style={{ display: 'inline-flex', gap: 3, marginTop: 4 }}>
+        <span style={{ display: 'flex', gap: 3, marginBottom: 4 }}>
           {['#E03248', '#FFCA05', '#2F6FE4'].map(c => (
             <span key={c} style={{ width: 5, height: 5, borderRadius: '50%', background: c }} />
           ))}
         </span>
+        <h1 style={{ margin: 0, fontFamily: 'var(--tt-font-heading)', fontSize: 20, fontWeight: 700, color: 'var(--tt-text)', lineHeight: 1.1 }}>
+          {title}
+        </h1>
       </div>
     </header>
   );

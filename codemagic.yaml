@@ -12,7 +12,7 @@ workflows:
       cocoapods: default
       ios_signing:
         distribution_type: ad_hoc
-        bundle_identifier: com.tutortime.parentShell
+        bundle_identifier: com.ttcomm.parent
       vars:
         APP_URL: https://ttparent.vercel.app
     scripts:
@@ -43,7 +43,7 @@ workflows:
       cocoapods: default
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: com.tutortime.parentShell
+        bundle_identifier: com.ttcomm.parent
       vars:
         APP_URL: https://ttparent.vercel.app
     scripts:

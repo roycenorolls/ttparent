@@ -5,7 +5,7 @@ workflows:
     max_build_duration: 30
     working_directory: shell
     integrations:
-      app_store_connect: codemagic
+      app_store_connect: TT Parent
     environment:
       flutter: stable
       xcode: latest
@@ -36,7 +36,7 @@ workflows:
     max_build_duration: 30
     working_directory: shell
     integrations:
-      app_store_connect: codemagic
+      app_store_connect: TT Parent
     environment:
       flutter: stable
       xcode: latest

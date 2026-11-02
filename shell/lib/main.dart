@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gal/gal.dart';
@@ -9,6 +11,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
+
+import 'firebase_options.dart';
 
 // Throwaway shell to check that the auth_token cookie survives an app kill.
 // Point it at the web app with:
@@ -23,7 +27,11 @@ bool _isMediaUrl(Uri uri) {
   return uri.scheme == 'https' && const {'imagedelivery.net', 'media.tutortime.co.id', 'kidsworld.co.id'}.contains(uri.host);
 }
 
-void main() => runApp(const MaterialApp(home: Shell()));
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: firebaseOptions);
+  runApp(const MaterialApp(home: Shell()));
+}
 
 class Shell extends StatefulWidget {
   const Shell({super.key});
@@ -34,6 +42,40 @@ class Shell extends StatefulWidget {
 
 class _ShellState extends State<Shell> {
   late final controller = _createController();
+  String? _pushToken;
+
+  @override
+  void initState() {
+    super.initState();
+    _initPush();
+  }
+
+  // Announcements arrive as FCM pushes; tapping one opens that post.
+  Future<void> _initPush() async {
+    final fm = FirebaseMessaging.instance;
+    await fm.requestPermission();
+    FirebaseMessaging.onMessageOpenedApp.listen(_openPush);
+    final initial = await fm.getInitialMessage();
+    if (initial != null) _openPush(initial);
+    fm.onTokenRefresh.listen((t) { _pushToken = t; _sendPushToken(); });
+    try {
+      _pushToken = await fm.getToken();
+      _sendPushToken();
+    } catch (_) {} // no network / APNs not ready yet: onTokenRefresh retries
+  }
+
+  void _openPush(RemoteMessage m) {
+    final id = m.data['update_id'];
+    if (id != null) controller.loadRequest(Uri.parse('$appUrl/gallery/$id'));
+  }
+
+  // The token is saved through the web app's proxy, so it rides the parent's
+  // auth cookie. Signed-out pages just get a 401; the next page load retries.
+  void _sendPushToken() {
+    if (_pushToken == null) return;
+    controller.runJavaScript("fetch('/api/tt/parent/push-token',{method:'POST',"
+        "headers:{'Content-Type':'application/json'},body:JSON.stringify({token:${jsonEncode(_pushToken)}})})");
+  }
 
   WebViewController _createController() {
     // Inline video lets the QR camera preview play inside the page on iOS.
@@ -47,7 +89,7 @@ class _ShellState extends State<Shell> {
       ..addJavaScriptChannel('TTShell', onMessageReceived: (m) => _save(m.message))
       // Links off the app (wa.me, tel:, …) open in their own apps; the WebView
       // can't follow them and would strand the user on an error page.
-      ..setNavigationDelegate(NavigationDelegate(onNavigationRequest: (req) {
+      ..setNavigationDelegate(NavigationDelegate(onPageFinished: (_) => _sendPushToken(), onNavigationRequest: (req) {
         final uri = Uri.parse(req.url);
         if (!req.isMainFrame || uri.host == Uri.parse(appUrl).host) return NavigationDecision.navigate;
         launchUrl(uri, mode: LaunchMode.externalApplication);

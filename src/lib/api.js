@@ -38,6 +38,7 @@ async function apiFetch(path, options = {}) {
 }
 
 export const api = {
+  clearCache:    () => cache.clear(),
   childProfile:  (id) => cachedGet(`/parent/child/${id}`),
   scheduleWeek:  (id) => cachedGet(`/parent/child/${id}/schedule/week`),
   updates:       (all) => cachedGet(all ? '/parent/updates?all=1' : '/parent/updates'),
@@ -48,6 +49,11 @@ export const api = {
     method: 'POST',
     body: JSON.stringify({ body }),
   }),
+  editComment:   (id, commentId, body) => apiFetch(`/parent/updates/${id}/comments/${commentId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ body }),
+  }),
+  deleteComment: (id, commentId) => apiFetch(`/parent/updates/${id}/comments/${commentId}`, { method: 'DELETE' }),
   membership:    ()   => cachedGet('/parent/membership'),
   setFaceMatchConsent: (id, consent) => apiFetch(`/parent/child/${id}/face-match-consent`, {
     method: 'PATCH',

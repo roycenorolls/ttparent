@@ -59,7 +59,12 @@ export default function BottomNav() {
             key={href} href={href} aria-current={active ? 'page' : undefined}
             className={`tt-tab${yellow ? ' is-yellow' : ''}`}
             onClick={() => {
-              if (active) return;
+              if (active) {
+                // Tapping the tab you are on reloads it (Home refreshes its timeline).
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                window.dispatchEvent(new Event('tt:refresh'));
+                return;
+              }
               setPending(href);
               setTap(p => ({ href, n: p.n + 1 }));
             }}

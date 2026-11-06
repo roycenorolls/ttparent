@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { accentAt } from '@/lib/playful';
@@ -256,16 +256,20 @@ export function Engagement({ u, time, dark }) {
         </button>
         {time && <span style={{ marginLeft: 'auto', fontSize: 13, color: T.time, fontWeight: 700, flexShrink: 0 }}>{time}</span>}
       </div>
-      {open && <CommentPanel T={T} updateId={u.id} onAdded={() => setMine(n => n + 1)} />}
+      {open && <CommentPanel T={T} updateId={u.id} onAdded={() => setMine(n => n + 1)} onRemoved={() => setMine(n => Math.max(0, n - 1))} />}
     </>
   );
 }
 
-function CommentPanel({ T, updateId, onAdded }) {
+const FIELD = { padding: '10px 16px', fontSize: 14, fontWeight: 600, fontFamily: 'inherit', outline: 'none', lineHeight: 1.4 };
+const LINK_BTN = { all: 'unset', cursor: 'pointer', fontWeight: 700, fontSize: 13, color: 'var(--tt-blue)' };
+
+function CommentPanel({ T, updateId, onAdded, onRemoved }) {
   const [items,   setItems]   = useState(null);
   const [text,    setText]    = useState('');
   const [sending, setSending] = useState(false);
   const [error,   setError]   = useState(null);
+  const box = useRef(null);
 
   useEffect(() => {
     const fetchComments = () => api.comments(updateId).then(d => setItems(d.comments || [])).catch(() => {});
@@ -289,9 +293,31 @@ function CommentPanel({ T, updateId, onAdded }) {
     if (!body || sending) return;
     setSending(true); setError(null);
     api.addComment(updateId, body)
-      .then(d => { setItems(list => [...(list || []), d.comment]); setText(''); onAdded(); })
+      .then(d => {
+        setItems(list => [...(list || []), d.comment]); setText(''); onAdded();
+        if (box.current) box.current.style.height = 'auto';
+      })
       .catch(() => setError("Couldn't send. Please try again."))
       .finally(() => setSending(false));
+  };
+
+  const [editing, setEditing]   = useState(null);
+  const [editText, setEditText] = useState('');
+
+  const saveEdit = e => {
+    e.preventDefault();
+    const body = editText.trim(), id = editing;
+    if (!body) return;
+    api.editComment(updateId, id, body)
+      .then(() => { setItems(list => list.map(c => c.id === id ? { ...c, body } : c)); setEditing(null); })
+      .catch(() => setError("Couldn't save. Please try again."));
+  };
+
+  const remove = id => {
+    if (!window.confirm('Delete this comment?')) return;
+    api.deleteComment(updateId, id)
+      .then(() => { setItems(list => list.filter(c => c.id !== id)); onRemoved(); })
+      .catch(() => setError("Couldn't delete. Please try again."));
   };
 
   return (
@@ -305,10 +331,23 @@ function CommentPanel({ T, updateId, onAdded }) {
           <div style={{ fontSize: 14, fontWeight: 600, color: T.bubbleInk, lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{c.body}</div>
           <div style={{ fontSize: 11, fontWeight: 700, color: T.meta, marginTop: 4 }}>{shortDate(c.created_at)} · {clock(c.created_at)}</div>
         </div>
+      ) : editing === c.id ? (
+        <form key={c.id} onSubmit={saveEdit} style={{ marginBottom: 8 }}>
+          <textarea value={editText} onChange={e => setEditText(e.target.value)} maxLength={500} rows={2} autoFocus
+                    aria-label="Edit your comment" style={{ ...FIELD, borderRadius: 18, width: '100%', boxSizing: 'border-box', resize: 'none', ...T.input }} />
+          <div style={{ display: 'flex', gap: 14, marginTop: 4, fontSize: 13, fontWeight: 700 }}>
+            <button type="submit" disabled={!editText.trim()} style={LINK_BTN}>Save</button>
+            <button type="button" onClick={() => setEditing(null)} style={{ ...LINK_BTN, color: T.meta }}>Cancel</button>
+          </div>
+        </form>
       ) : (
         <div key={c.id} style={{ background: T.bubble, borderRadius: '20px 20px 6px 20px', padding: '10px 14px', marginBottom: 8 }}>
           <div style={{ fontSize: 14, fontWeight: 600, color: T.bubbleInk, lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{c.body}</div>
-          <div style={{ fontSize: 11, fontWeight: 700, color: T.meta, marginTop: 4 }}>{shortDate(c.created_at)} · {clock(c.created_at)}</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: T.meta, marginTop: 4, display: 'flex', gap: 12 }}>
+            <span>{shortDate(c.created_at)} · {clock(c.created_at)}</span>
+            <button type="button" onClick={() => { setEditing(c.id); setEditText(c.body); }} style={{ ...LINK_BTN, color: T.meta, fontSize: 11 }}>Edit</button>
+            <button type="button" onClick={() => remove(c.id)} style={{ ...LINK_BTN, color: T.meta, fontSize: 11 }}>Delete</button>
+          </div>
           {REACTIONS[c.reaction] && (
             <span style={{ display: 'inline-block', marginTop: 6, fontSize: 12, fontWeight: 700, background: T.chip, color: T.bubbleInk, borderRadius: 999, padding: '2px 10px' }}>
               {REACTIONS[c.reaction]} from your teacher
@@ -316,14 +355,13 @@ function CommentPanel({ T, updateId, onAdded }) {
           )}
         </div>
       ))}
-      <form onSubmit={send} style={{ display: 'flex', gap: 8, marginTop: 4, paddingBottom: 4 }}>
-        <input
-          value={text} onChange={e => setText(e.target.value)} maxLength={500}
+      <form onSubmit={send} style={{ display: 'flex', gap: 8, marginTop: 4, paddingBottom: 4, alignItems: 'flex-end' }}>
+        {/* A textarea, so Return starts a new line; only the Send button sends. */}
+        <textarea
+          ref={box} value={text} onChange={e => setText(e.target.value)} maxLength={500} rows={1}
+          onInput={e => { e.target.style.height = 'auto'; e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`; }}
           placeholder="Write a comment…" aria-label="Write a comment"
-          style={{
-            flex: 1, minWidth: 0, padding: '10px 16px', borderRadius: 999, fontSize: 14, fontWeight: 600, fontFamily: 'inherit',
-            outline: 'none', ...T.input,
-          }}
+          style={{ ...FIELD, flex: 1, minWidth: 0, borderRadius: 20, resize: 'none', ...T.input }}
         />
         <button type="submit" disabled={!text.trim() || sending} className="tt-press" style={{
           padding: '10px 18px', borderRadius: 999, border: 'none', fontSize: 15, fontWeight: 600,

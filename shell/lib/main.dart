@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gal/gal.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
@@ -119,6 +120,9 @@ class _ShellState extends State<Shell> {
     return req.grant();
   }
 
+  // The web app posts {"url", "type", "action"}. Photos and videos go to the
+  // photo library. A PDF is opened in the phone's own viewer ("open") or handed
+  // to the share sheet, where "Save to Files" / Downloads lives ("save").
   Future<void> _save(String message) async {
     String result;
     final client = HttpClient()..connectionTimeout = const Duration(seconds: 15);
@@ -127,28 +131,41 @@ class _ShellState extends State<Shell> {
       final msg = jsonDecode(message) as Map<String, dynamic>;
       final type = msg['type'] as String? ?? '';
       final uri = Uri.parse(msg['url'] as String);
-      if ((!type.startsWith('image') && !type.startsWith('video')) || !_isMediaUrl(uri)) {
+      final pdf = type == 'application/pdf';
+      if ((!type.startsWith('image') && !type.startsWith('video') && !pdf) || !_isMediaUrl(uri)) {
         throw const FormatException('unsupported file');
       }
-      if (!await Gal.hasAccess()) await Gal.requestAccess();
+
+      if (pdf && msg['action'] == 'open') {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        return;
+      }
+      if (!pdf && !await Gal.hasAccess()) await Gal.requestAccess();
 
       final res = await (await client.getUrl(uri)).close().timeout(const Duration(seconds: 30));
       if (res.statusCode != 200) throw HttpException('status ${res.statusCode}');
 
       if (type.startsWith('image')) {
         await Gal.putImageBytes(await consolidateHttpClientResponseBytes(res));
+        result = 'Saved to your photos';
       } else {
-        // Videos can be large: stream to disk instead of holding them in memory.
-        final ext = type.split('/').last.replaceAll(RegExp(r'[^a-z0-9]'), '');
+        // Videos and PDFs can be large: stream to disk instead of holding them in memory.
+        // The library needs a real extension: iPhone clips are video/quicktime, which is ".mov".
+        final sub = type.split('/').last;
+        final ext = pdf ? 'pdf' : (sub == 'quicktime' ? 'mov' : sub.replaceAll(RegExp(r'[^a-z0-9]'), ''));
         file = File('${Directory.systemTemp.path}/tt_${DateTime.now().millisecondsSinceEpoch}.$ext');
         await res.pipe(file.openWrite());
+        if (pdf) {
+          await Share.shareXFiles([XFile(file.path, mimeType: type)]);
+          return;
+        }
         await Gal.putVideo(file.path);
+        result = 'Saved to your photos';
       }
-      result = 'Saved to your photos';
     } on GalException catch (e) {
-      result = e.type == GalExceptionType.accessDenied ? 'Allow photo access in Settings to save' : "Couldn't save this file";
-    } catch (_) {
-      result = "Couldn't save this file";
+      result = e.type == GalExceptionType.accessDenied ? 'Allow photo access in Settings to save' : "Couldn't save this file (${e.type.name})";
+    } catch (e) {
+      result = "Couldn't save this file (${e.toString().split('\n').first})";
     } finally {
       client.close(force: true);
       if (file != null && await file.exists()) await file.delete();

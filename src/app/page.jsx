@@ -3,6 +3,7 @@ import AppHeader from '@/components/AppHeader';
 import { useEffect, useState } from 'react';
 import { getGreeting } from '@/lib/time';
 import { api } from '@/lib/api';
+import usePullToRefresh from '@/lib/usePullToRefresh';
 import ChildSwitcher  from '@/components/ChildSwitcher';
 import DayTimeline    from '@/components/DayTimeline';
 import UpdatesFeed, { isPinnedReminder, ReminderList } from '@/components/UpdatesFeed';
@@ -50,6 +51,18 @@ export default function HomePage() {
       .catch(() => {});
   }, [activeId]);
 
+  // Pull down, or tap Home again: drop the cached reads and reload the timeline.
+  const [refreshing, setRefreshing] = useState(false);
+  usePullToRefresh(() => {
+    if (refreshing) return;
+    setRefreshing(true);
+    api.clearCache();
+    Promise.all([
+      api.updates().then(data => setUpdates(data.updates || [])),
+      activeId && api.childProfile(activeId).then(data => { setChild(data.child); setStatus(data.status); }),
+    ]).catch(() => {}).finally(() => setRefreshing(false));
+  });
+
   // This child's posts (class-wide ones included), split into today and earlier.
   const mine    = updates.filter(u => !u.child_ids?.length || u.child_ids.includes(activeId));
   const today   = new Date().toDateString();
@@ -69,6 +82,9 @@ export default function HomePage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 24 }}>
       <AppHeader title="Home" />
+      {refreshing && (
+        <div role="status" style={{ textAlign: 'center', fontSize: 13, fontWeight: 700, color: 'var(--tt-muted)' }}>Refreshing…</div>
+      )}
 
       {/* Greeting, with the child pills overlapping its bottom edge */}
       <div style={{ margin: '4px 16px 0' }}>

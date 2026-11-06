@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
-import { openWhatsapp, whatsappLink } from '@/lib/whatsapp';
+import { askMessage, openWhatsapp, whatsappLink } from '@/lib/whatsapp';
 import { Engagement, isReminder } from '@/components/UpdatesFeed';
 
 // Browsers ignore <a download> for cross-origin files and just open them, so
@@ -30,6 +30,58 @@ async function saveInBrowser(url) {
     if (err?.name === 'AbortError') return; // user closed the share sheet
     window.open(url, '_blank'); // CORS blocked the fetch: at least show it so they can long-press
   }
+}
+
+// Open ('open') or save ('save') a photo, video or PDF. Inside the app shell the
+// WebView can't do either, so the file goes to the shell; in a browser a PDF
+// opens in a tab and everything else downloads.
+function openFile(f, action) {
+  const url = new URL(f.file_path, location.href).href;
+  if (window.TTShell) {
+    window.TTShell.postMessage(JSON.stringify({ url, type: f.file_type || '', action }));
+  } else if (action === 'open') {
+    window.open(url, '_blank', 'noopener');
+  } else {
+    saveInBrowser(url);
+  }
+}
+
+const clock = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+
+// One player for iOS and Android, so the controls (including the 10-second
+// skips) are the same everywhere instead of whatever the phone's own player has.
+function VideoPlayer({ src, poster }) {
+  const v = useRef(null);
+  const [playing, setPlaying] = useState(false);
+  const [t, setT] = useState(0);
+  const [d, setD] = useState(0);
+  const skip = s => { const el = v.current; if (el) el.currentTime = Math.max(0, Math.min(el.duration || 0, el.currentTime + s)); };
+  const toggle = () => { const el = v.current; if (el) (el.paused ? el.play() : el.pause()); };
+  const btn = { all: 'unset', cursor: 'pointer', color: '#fff', fontFamily: 'var(--tt-font-heading)', fontSize: 15, fontWeight: 600, padding: '8px 10px' };
+  return (
+    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, minHeight: 0 }}>
+      <video
+        ref={v} src={src} poster={poster} playsInline preload="metadata" onClick={toggle}
+        onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)}
+        onTimeUpdate={e => setT(e.target.currentTime)} onLoadedMetadata={e => setD(e.target.duration)}
+        style={{ maxWidth: '100%', flex: '1 1 0', minHeight: 0, borderRadius: 16, background: '#000' }}
+      />
+      <input
+        type="range" min={0} max={d || 0} step="any" value={t} aria-label="Seek"
+        onChange={e => { if (v.current) v.current.currentTime = Number(e.target.value); }}
+        style={{ width: '100%', accentColor: 'var(--tt-yellow)' }}
+      />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'rgba(253,246,238,0.7)', fontSize: 12.5, fontWeight: 700 }}>
+        <span style={{ minWidth: 80, textAlign: 'right' }}>{clock(t)} / {clock(d)}</span>
+        <button onClick={() => skip(-10)} style={btn} aria-label="Back 10 seconds">⟲ 10</button>
+        <button onClick={toggle} style={{ ...btn, fontSize: 22, padding: '4px 16px', background: 'var(--tt-yellow)', color: 'var(--tt-blue)', borderRadius: 999 }} aria-label={playing ? 'Pause' : 'Play'}>
+          {playing ? '❚❚' : '▶'}
+        </button>
+        <button onClick={() => skip(10)} style={btn} aria-label="Forward 10 seconds">10 ⟳</button>
+        <span style={{ minWidth: 80 }} />
+      </div>
+    </div>
+  );
 }
 
 // Pinch to zoom, drag to pan while zoomed, double-tap to toggle 2.5x. At 1x a
@@ -173,7 +225,7 @@ export default function FullscreenViewer() {
   const teacher = update.teacher;
   // No school WhatsApp number assigned to this class: never fall back to a
   // teacher's personal mobile, just let the parent open WhatsApp themselves.
-  const waLink  = whatsappLink(teacher?.phone);
+  const waLink  = whatsappLink(teacher?.phone, askMessage(update, teacher));
 
   if (landscape && current?.file_type?.startsWith('image')) return (
     <div {...zoom.handlers} className="tt-dark-page" style={{
@@ -219,17 +271,15 @@ export default function FullscreenViewer() {
             allowFullScreen
           />
         ) : isVideo ? (
-          <video
-            key={current.file_path}
-            src={current.file_path}
-            poster={current.thumbnail || undefined}
-            controls
-            playsInline
-            preload="metadata"
-            style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: 16, background: '#000' }}
-          />
+          <VideoPlayer key={current.file_path} src={current.file_path} poster={current.thumbnail || undefined} />
         ) : (
-          <div style={{ color: 'var(--tt-bg)', fontSize: 49 }}>📄</div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ color: 'var(--tt-bg)', fontSize: 49 }}>📄</div>
+            <button onClick={() => openFile(current, 'open')} className="tt-press" style={{
+              marginTop: 12, background: 'var(--tt-yellow)', color: 'var(--tt-blue)', '--tt-edge': '#D9A800', border: 'none', cursor: 'pointer',
+              padding: '11px 24px', borderRadius: 999, fontFamily: 'var(--tt-font-heading)', fontSize: 16, fontWeight: 600,
+            }}>Open document</button>
+          </div>
         )}
       </div>
 
@@ -278,12 +328,7 @@ export default function FullscreenViewer() {
           <a href={current.file_path} download target="_blank" rel="noopener noreferrer" onClick={e => {
             // Inside the app shell the WebView can't download; hand the file to the shell instead.
             e.preventDefault();
-            const url = new URL(current.file_path, location.href).href;
-            if (window.TTShell) {
-              window.TTShell.postMessage(JSON.stringify({ url, type: current.file_type || '' }));
-              return;
-            }
-            saveInBrowser(url);
+            openFile(current, 'save');
           }} className="tt-press" style={{
             flex: 1, background: 'var(--tt-yellow)', color: 'var(--tt-blue)', textDecoration: 'none', '--tt-edge': '#D9A800',
             padding: '11px 0', borderRadius: 999, textAlign: 'center', fontFamily: 'var(--tt-font-heading)', fontSize: 16, fontWeight: 600,
@@ -300,11 +345,7 @@ export default function FullscreenViewer() {
 // An announcement opened from Home: the full text, then its attachments as tappable rows.
 function AnnouncementView({ update, onBack }) {
   const files = update.media || [];
-  const open = f => {
-    const url = new URL(f.file_path, location.href).href;
-    if (window.TTShell) { window.TTShell.postMessage(JSON.stringify({ url, type: f.file_type || '' })); return; }
-    window.open(url, '_blank', 'noopener');
-  };
+  const open = f => openFile(f, 'open');
   return (
     <div style={{ minHeight: '100dvh', paddingBottom: 32 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px', paddingTop: 'calc(16px + var(--tt-safe-top))' }}>
@@ -330,8 +371,9 @@ function AnnouncementView({ update, onBack }) {
             {files.map((f, i) => {
               const photo = f.file_type?.startsWith('image');
               return (
-                <button key={i} onClick={() => open(f)} className="tt-press" style={{
-                  display: 'flex', alignItems: 'center', gap: 12, padding: 12, borderRadius: 20, cursor: 'pointer',
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button onClick={() => open(f)} className="tt-press" style={{
+                  flex: 1, display: 'flex', alignItems: 'center', gap: 12, padding: 12, borderRadius: 20, cursor: 'pointer',
                   border: 'none', background: '#fff', textAlign: 'left', fontFamily: 'inherit',
                 }}>
                   {photo
@@ -339,6 +381,11 @@ function AnnouncementView({ update, onBack }) {
                     : <span style={{ width: 48, height: 48, borderRadius: 14, background: 'var(--tt-red-tint)', transform: 'rotate(-4deg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>📄</span>}
                   <span style={{ fontFamily: 'var(--tt-font-heading)', fontSize: 17, fontWeight: 600, color: 'var(--tt-text)' }}>{photo ? 'View photo' : 'Open document'}</span>
                 </button>
+                <button onClick={() => openFile(f, 'save')} className="tt-press" aria-label="Save to phone" style={{
+                  flexShrink: 0, padding: '14px 18px', borderRadius: 20, border: 'none', cursor: 'pointer',
+                  background: 'var(--tt-yellow)', color: 'var(--tt-blue)', fontFamily: 'var(--tt-font-heading)', fontSize: 15, fontWeight: 600,
+                }}>↓ Save</button>
+                </div>
               );
             })}
           </div>

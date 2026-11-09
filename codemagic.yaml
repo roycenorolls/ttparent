@@ -95,7 +95,7 @@ workflows:
     environment:
       flutter: stable
       android_signing:
-        - tt_parent_upload
+        - TT-Parent-App
       vars:
         APP_URL: https://ttparent.vercel.app
     scripts:
@@ -114,7 +114,7 @@ workflows:
     environment:
       flutter: stable
       android_signing:
-        - tt_parent_upload
+        - TT-Parent-App
       vars:
         APP_URL: https://ttparent.vercel.app
     scripts:

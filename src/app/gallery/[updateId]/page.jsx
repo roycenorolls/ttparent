@@ -46,6 +46,21 @@ function openFile(f, action) {
   }
 }
 
+// A Stream video's file_path is its HLS playlist, which can't be saved. The
+// API asks Cloudflare for an MP4 copy instead; that's made on the first
+// request, so wait for it (up to ~3 minutes), reporting progress as it goes.
+const STREAM_HLS = /^https:\/\/videodelivery\.net\/([A-Za-z0-9]+)\/manifest\//;
+async function streamMp4(updateId, uid, onProgress) {
+  for (let i = 0; i < 60; i++) {
+    const d = await api.videoDownload(updateId, uid);
+    if (d.status === 'ready' && d.url) return d.url;
+    if (d.status === 'error') break;
+    onProgress(Math.round(d.percent || 0));
+    await new Promise(r => setTimeout(r, 3000));
+  }
+  throw new Error('MP4 not ready');
+}
+
 const clock = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 
 // One player for iOS and Android, so the controls (including the 10-second
@@ -145,6 +160,7 @@ export default function FullscreenViewer() {
   const [idx, setIdx]         = useState(0);
   const [details, setDetails] = useState({});
   const [landscape, setLandscape] = useState(false);
+  const [preparing, setPreparing] = useState(null); // null | percent | 'failed' while fetching a video's MP4
   // Rotating the phone sideways turns an image into a full-screen view.
   useEffect(() => {
     const mq = window.matchMedia('(orientation: landscape) and (max-height: 500px)');
@@ -226,6 +242,20 @@ export default function FullscreenViewer() {
   // No school WhatsApp number assigned to this class: never fall back to a
   // teacher's personal mobile, just let the parent open WhatsApp themselves.
   const waLink  = whatsappLink(teacher?.phone, askMessage(update, teacher));
+
+  const save = async () => {
+    const uid = current.file_path.match(STREAM_HLS)?.[1];
+    if (!uid) return openFile(current, 'save');
+    if (typeof preparing === 'number') return; // already preparing
+    setPreparing(0);
+    try {
+      openFile({ file_path: await streamMp4(update.id, uid, setPreparing), file_type: 'video/mp4' }, 'save');
+      setPreparing(null);
+    } catch {
+      setPreparing('failed');
+      setTimeout(() => setPreparing(null), 4000);
+    }
+  };
 
   if (landscape && current?.file_type?.startsWith('image')) return (
     <div {...zoom.handlers} className="tt-dark-page" style={{
@@ -328,12 +358,12 @@ export default function FullscreenViewer() {
           <a href={current.file_path} download target="_blank" rel="noopener noreferrer" onClick={e => {
             // Inside the app shell the WebView can't download; hand the file to the shell instead.
             e.preventDefault();
-            openFile(current, 'save');
+            save();
           }} className="tt-press" style={{
             flex: 1, background: 'var(--tt-yellow)', color: 'var(--tt-blue)', textDecoration: 'none', '--tt-edge': '#D9A800',
             padding: '11px 0', borderRadius: 999, textAlign: 'center', fontFamily: 'var(--tt-font-heading)', fontSize: 16, fontWeight: 600,
           }}>
-            ↓ Save
+            {preparing === null ? '↓ Save' : preparing === 'failed' ? 'Try again later' : `Preparing… ${preparing}%`}
           </a>
         )}
       </div>

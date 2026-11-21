@@ -44,6 +44,7 @@ export const api = {
   updates:       (all) => cachedGet(all ? '/parent/updates?all=1' : '/parent/updates'),
   updateDetail:  (id) => cachedGet(`/parent/updates/${id}`),
   toggleLike:    (id) => apiFetch(`/parent/updates/${id}/like`, { method: 'POST' }),
+  videoDownload: (id, uid) => apiFetch(`/parent/updates/${id}/video-download?uid=${encodeURIComponent(uid)}`),
   comments:      (id) => apiFetch(`/parent/updates/${id}/comments`),
   addComment:    (id, body) => apiFetch(`/parent/updates/${id}/comments`, {
     method: 'POST',

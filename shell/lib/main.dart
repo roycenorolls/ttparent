@@ -20,12 +20,15 @@ import 'firebase_options.dart';
 //   flutter run --dart-define=APP_URL=http://10.0.2.2:3000
 const appUrl = String.fromEnvironment('APP_URL', defaultValue: 'http://10.0.2.2:3000');
 
-// Only media from these hosts can be saved: the app itself, Cloudflare Images
-// and the R2 bucket. On Android third-party iframes can reach TTShell too.
+// Only media from these hosts can be saved: the app itself, Cloudflare Images,
+// the R2 bucket and Cloudflare Stream's MP4 downloads. On Android third-party
+// iframes can reach TTShell too.
 bool _isMediaUrl(Uri uri) {
   final app = Uri.parse(appUrl);
   if (uri.scheme == app.scheme && uri.host == app.host && uri.port == app.port) return true;
-  return uri.scheme == 'https' && const {'imagedelivery.net', 'media.tutortime.co.id', 'kidsworld.co.id'}.contains(uri.host);
+  if (uri.scheme != 'https') return false;
+  return const {'imagedelivery.net', 'media.tutortime.co.id', 'kidsworld.co.id', 'videodelivery.net'}.contains(uri.host) ||
+      uri.host.endsWith('.cloudflarestream.com');
 }
 
 void main() async {

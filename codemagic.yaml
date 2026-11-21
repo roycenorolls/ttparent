@@ -7,7 +7,7 @@ workflows:
     integrations:
       app_store_connect: TT Parent
     environment:
-      flutter: stable
+      flutter: 3.50.1
       xcode: latest
       cocoapods: default
       ios_signing:
@@ -38,7 +38,7 @@ workflows:
     integrations:
       app_store_connect: TT Parent
     environment:
-      flutter: stable
+      flutter: 3.50.1
       xcode: latest
       cocoapods: default
       ios_signing:
@@ -71,7 +71,7 @@ workflows:
     max_build_duration: 30
     working_directory: shell
     environment:
-      flutter: stable
+      flutter: 3.50.1
       vars:
         APP_URL: https://ttparent.vercel.app
     scripts:
@@ -93,7 +93,7 @@ workflows:
     max_build_duration: 30
     working_directory: shell
     environment:
-      flutter: stable
+      flutter: 3.50.1
       android_signing:
         - TT-Parent-App
       vars:
@@ -112,7 +112,7 @@ workflows:
     max_build_duration: 30
     working_directory: shell
     environment:
-      flutter: stable
+      flutter: 3.50.1
       android_signing:
         - TT-Parent-App
       vars:

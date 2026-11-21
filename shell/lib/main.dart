@@ -159,7 +159,7 @@ class _ShellState extends State<Shell> {
         file = File('${Directory.systemTemp.path}/tt_${DateTime.now().millisecondsSinceEpoch}.$ext');
         await res.pipe(file.openWrite());
         if (pdf) {
-          await Share.shareXFiles([XFile(file.path, mimeType: type)]);
+          await SharePlus.instance.share(ShareParams(files: [XFile(file.path, mimeType: type)]));
           return;
         }
         await Gal.putVideo(file.path);
